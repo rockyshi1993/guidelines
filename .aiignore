@@ -1,0 +1,33 @@
+# An .aiignore file follows the same syntax as a .gitignore file.
+# .gitignore documentation: https://git-scm.com/docs/gitignore
+# Junie will ask for explicit approval before view or edit the file or file within a directory listed in .aiignore.
+# Only files contents is protected, Junie is still allowed to view file names even if they are listed in .aiignore.
+# Be aware that the files you included in .aiignore can still be accessed by Junie in two cases:
+# - If Brave Mode is turned on.
+# - If a command has been added to the Allowlist — Junie will not ask for confirmation, even if it accesses - files and folders listed in .aiignore.
+
+# Repository-wide ignores
+.git/
+.DS_Store
+Thumbs.db
+
+# IDE/editor settings
+.idea/
+.vscode/
+
+# Project-specific heavy/derived content
+# Exclude third-party dependencies
+monSQLize/node_modules/
+
+# Build and coverage artifacts (if present)
+monSQLize/dist/
+monSQLize/build/
+monSQLize/coverage/
+monSQLize/.nyc_output/
+monSQLize/.cache/
+
+# Package manager lock/caches/logs
+monSQLize/package-lock.json
+monSQLize/pnpm-lock.yaml
+monSQLize/yarn.lock
+monSQLize/npm-debug.log*
