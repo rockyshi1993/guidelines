@@ -1,33 +1,110 @@
-# An .aiignore file follows the same syntax as a .gitignore file.
-# .gitignore documentation: https://git-scm.com/docs/gitignore
-# Junie will ask for explicit approval before view or edit the file or file within a directory listed in .aiignore.
-# Only files contents is protected, Junie is still allowed to view file names even if they are listed in .aiignore.
-# Be aware that the files you included in .aiignore can still be accessed by Junie in two cases:
-# - If Brave Mode is turned on.
-# - If a command has been added to the Allowlist — Junie will not ask for confirmation, even if it accesses - files and folders listed in .aiignore.
+# .aiignore 使用 .gitignore 语法，仅影响 AI 助手的「默认读取范围」
+# 注意：
+# 1) 即使被忽略，文件名仍可能可见；内容默认不读。
+# 2) 开启 Brave Mode 或命令被加入 Allowlist 时，助手仍可能读取这些路径。
+# 3) 不影响 Git/构建/测试/CI，仅用于降噪与提效。
 
-# Repository-wide ignores
+############################
+# 1) 仓库范围/系统文件
+############################
 .git/
-.DS_Store
-Thumbs.db
-
-# IDE/editor settings
+.github/
 .idea/
 .vscode/
+.DS_Store
+Thumbs.db
+.output.txt
 
-# Project-specific heavy/derived content
-# Exclude third-party dependencies
-monSQLize/node_modules/
+########################################
+# 2) 依赖目录（任意语言/任意层级）
+########################################
+node_modules/
+# 预留：Go/Rust/Java 等（即便当前未使用，忽略也无害）
+vendor/
+target/
+.gradle/
+.mvn/
 
-# Build and coverage artifacts (if present)
-monSQLize/dist/
-monSQLize/build/
-monSQLize/coverage/
-monSQLize/.nyc_output/
-monSQLize/.cache/
+########################################
+# 3) 构建产物与缓存（任意项目）
+########################################
+# 通用构建/产出
+build/
+dist/
+out/
+coverage/
+.nyc_output/
+.cache/
+.temp/
+.tmp/
 
-# Package manager lock/caches/logs
-monSQLize/package-lock.json
-monSQLize/pnpm-lock.yaml
-monSQLize/yarn.lock
-monSQLize/npm-debug.log*
+# 前端/工具缓存
+.parcel-cache/
+.turbo/
+.vite/
+.next/
+.nuxt/
+.angular/
+.svelte-kit/
+.eslintcache
+.stylelintcache
+.tsbuildinfo
+
+########################################
+# 4) Python 专用派生内容
+########################################
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+coverage.xml
+htmlcov/
+
+########################################
+# 5) 包管理器锁/日志（阅读价值低，体量可观）
+########################################
+# 说明：锁文件对构建很重要，但对 AI 阅读通常无关，可默认忽略
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+########################################
+# 6) 环境变量/敏感配置（示例/本地）
+########################################
+.env
+.env.*
+*.local
+*secret*
+# HTTP 客户端私有环境
+http-client.private.env.json
+
+########################################
+# 7) 项目特有补充（已观察到）
+########################################
+# ndsk 开发/编译输出（多个子项目会生成，如 chatAI、ndsk_core）
+**/.ndsk/
+
+# gRPC：常见生成/缓存（若存在）
+node_server/dist/
+python_server/__pycache__/
+
+# 大体量静态资源（通常对逻辑分析帮助有限）
+**/static/
+**/images/
+**/cert/
+
+########################################
+# 8) 保留/提醒（不要忽略的内容示例）
+########################################
+# 说明：以下为“不要忽略”的类别，仅作提醒，不需写到规则中。
+# - 源码与类型：src/**, lib/**, models/**, proto/**, test/**
+# - 关键文档：README.md, CHANGELOG.md, STATUS.md
+# 如需对某一被忽略目录中的单个文件放行，可使用否定规则，例如：
+# !path/to/keep-this-file.json
