@@ -11,7 +11,7 @@
 ## 关键目录（根：D:\Project\monSQLize）
 - lib\            已编译 JS（入口：lib\index.js）
 - utils\          工具方法（注意：此目录在 monSQLize 根级，不在 lib\ 下）
-- example\        示例代码
+- examples\        示例代码
 - test\           包测试（入口脚本：test\run-tests.js）
 - README.md       完整文档（中文）
 - package.json    NPM 元数据与脚本
@@ -61,7 +61,7 @@
 ## 与文档联动
 - 变更公共 API/默认值/示例时，更新 monSQLize/README.md。
 - 对外可见变更在 monSQLize/CHANGELOG.md 的 [Unreleased] 追加条目。
-- 每个功能都需要的在 monSQLize/example/mongodb.js 添加演示示例
+- 每个功能都需要的在 monSQLize/examples/mongodb.js 添加演示示例
 
 ## Junie 如何校验改动
 1. 定位影响文件（通常在 monSQLize/...）。
