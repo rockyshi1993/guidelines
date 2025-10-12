@@ -213,8 +213,8 @@
 ### 7) 测试与质量
 
 ### 默认测试框架（可被 Profile 覆盖）
-- **Node.js**: Vitest / Jest（项目可覆盖为 Mocha）
-- **断言库**: Node.js 内置 assert / expect（根据测试框架）
+- **Node.js**: Vitest / Jest（项目可覆盖为 Mocha 等）
+- **断言库**: Vitest/Jest 默认使用 expect；Mocha 可选 assert/chai/expect
 - **Python**: pytest
 - **Go**: 内置 testing 包
 - **Java**: JUnit

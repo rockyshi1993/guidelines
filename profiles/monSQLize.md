@@ -60,7 +60,7 @@ index.d.ts          # TypeScript 类型声明
 
 ### 测试框架例外
 相对通用规范（guidelines.md 第7节）的差异：
-- **测试框架**: Mocha（通用规范默认：Vitest/Jest）
+- **测试框架**: 自定义测试运行器（兼容 Mocha API，通用规范默认：Vitest/Jest）
 - **断言库**: Node.js 内置 assert（通用规范默认：expect）
 
 ### 测试覆盖率标准（项目提升）
@@ -134,20 +134,22 @@ async findOne(options) {
 
 ```javascript
 // test/findOne.test.js
-const assert = require('assert'); // Node.js 内置断言
-const MonSQLize = require('../lib/index'); // CommonJS
+const assert = require('assert');
+const MonSQLize = require('../lib/index');
 
-describe('findOne', () => {
-    let client, collection;
+describe('findOne 方法测试套件', function() {
+    this.timeout(30000);
+    
+    let msq, collection;
 
     before(async () => {
-        client = new MonSQLize({
+        msq = new MonSQLize({
             type: 'mongodb',
             databaseName: 'test',
-            config: { uri: 'mongodb://localhost:27017' }
+            config: { uri: process.env.MONGO_URI || 'mongodb://localhost:27017' }
         });
-        const conn = await client.connect();
-        collection = conn.collection('test');
+        const conn = await msq.connect();
+        collection = conn.collection;
     });
 
     after(async () => {
@@ -155,12 +157,12 @@ describe('findOne', () => {
     });
 
     it('应该返回匹配的文档', async () => {
-        const doc = await collection.findOne({ query: { name: 'test' } });
+        const doc = await collection('users').findOne({ query: { name: 'test' } });
         assert.ok(doc);
     });
 
     it('应该在无匹配时返回 null', async () => {
-        const doc = await collection.findOne({ query: { name: 'nonexistent' } });
+        const doc = await collection('users').findOne({ query: { name: 'nonexistent' } });
         assert.strictEqual(doc, null);
     });
 });
@@ -172,7 +174,7 @@ describe('findOne', () => {
 
 ```javascript
 // examples/findOne.examples.js
-const MonSQLize = require('../lib/index'); // CommonJS + 单引号
+const MonSQLize = require('../lib/index');
 
 /**
  * findOne 示例
@@ -185,7 +187,8 @@ const MonSQLize = require('../lib/index'); // CommonJS + 单引号
         config: { uri: process.env.MONGO_URI || 'mongodb://localhost:27017' }
     });
 
-    const { collection } = await client.connect();
+    const conn = await client.connect();
+    const collection = conn.collection;
 
     // 基本查询
     const doc = await collection('users').findOne({
@@ -257,34 +260,19 @@ const cacheKey = `${iid}:${db}:${coll}:${op}:${queryShapeHash}`;
 - [ ] 使用 runner 模式封装异步操作
 
 ### 测试框架检查
-- [ ] 使用 Mocha + assert 编写测试
+- [ ] 使用自定义测试运行器（兼容 Mocha API）
+- [ ] 使用 assert 断言库
 - [ ] 测试初始化包含 MonSQLize 实例创建
+- [ ] 使用 `conn.collection` 获取集合访问器
 
 ### 示例代码检查
 - [ ] 示例使用 CommonJS require
 - [ ] 连接串使用环境变量或占位符
+- [ ] 使用 `const conn = await client.connect()` 模式
 
 ### 性能检查
 - [ ] 慢查询日志仅输出形状（不含具体值）
 - [ ] 缓存键包含完整标识（iid:db:coll:op:hash）
-
----
-
-## 常见问题
-
-### Q: 为什么使用 CommonJS 而不是 ESM？
-**A**: 为了兼容更多 Node.js 版本和用户环境，当前保持 CommonJS。未来可能迁移到 ESM。
-
-### Q: 为什么使用 Mocha 而不是 Vitest/Jest？
-**A**: 项目历史原因，已有大量 Mocha 测试。保持一致性比迁移带来的收益更大。
-
-### Q: 逻辑应该放在 common 还是 mongodb？
-**A**: 
-- 参数校验、缓存、日志 → `lib/common/`
-- Aggregation pipeline、连接管理 → `lib/mongodb/`
-
-### Q: 测试需要真实 MongoDB 环境吗？
-**A**: 是的。使用本地 MongoDB 或测试容器。CI 环境会自动启动 MongoDB 服务。
 
 ---
 
