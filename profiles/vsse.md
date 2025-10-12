@@ -1,4 +1,9 @@
-# Junie Profile（vsse）
+# Profile（vsse）
+
+## 项目规范
+本项目需遵循 `.github/guidelines.md` 通用规范。以下为项目特定配置和例外。
+
+---
 
 ## 关键目录与入口
 - 源码入口：src\index.js（导出 SSEClient）

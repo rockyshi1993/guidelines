@@ -1,76 +1,291 @@
-# 项目 Profile：monSQLize（Junie 专用）
+# monSQLize 项目规范（AI 助手用）
 
-本节仅适用于路径 D:\Project\monSQLize\... 的改动。用于指导自动化执行（测试/校验）与贡献者快速定位。使用说明、API 与示例以 monSQLize/README.md 为准。
-
-## 项目概览
-- 目标：统一（Mongo 风格）的读 API（find/findOne/count），支持默认值（maxTimeMS、findLimit）、内存缓存（TTL/LRU）、基于命名空间的缓存失效、慢查询日志与输入校验。
-- 适配：当前支持 MongoDB 适配器；其他数据库规划中。
-- 运行时：CommonJS；提供 index.d.ts 类型声明。
-- Node 版本建议：LTS（如 18.x/20.x）。
-
-## 关键目录（根：D:\Project\monSQLize）
-- lib\            已编译 JS（入口：lib\index.js）
-- utils\          工具方法（注意：此目录在 monSQLize 根级，不在 lib\ 下）
-- examples\        示例代码
-- test\           包测试（入口脚本：test\run-tests.js）
-- README.md       完整文档（中文）
-- package.json    NPM 元数据与脚本
-
-### 架构分层与扩展策略
-
-本项目采用“通用层 + 适配器层”的分层，以便未来扩展 MySQL/PostgreSQL/SQLite 等。核心原则：跨数据库可复用逻辑沉到 `lib/common`，数据库族专属复用逻辑放在 `lib/<adapter>/common`，各适配器入口 `lib/<adapter>/index.js` 只做薄粘合。
-
-#### 目录与职责边界
-- 通用层（跨库）：`lib/common`
-    - 错误与校验：`errors.js`（`makeValidationError`、`makeInvalidCursorError`），`validation.js`（`validateLimitAfterBefore` 等基础项）
-    - 游标与分页：`cursor.js`（`encodeCursor/ decodeCursor`）、`page-result.js`（`makePageResult`）
-    - 执行封装：`runner.js`（`createCachedRunner`，统一缓存/慢日志/命名空间）
-    - 日志与形状：`log.js`（`withSlowQueryLog`）、`shape-builders.js`（通用去敏 shape）
-    - 命名空间与序列化：`namespace.js`（解析 `iid` 流程）、`stable.js`（`stableStringify`、`sha256`）
-    - 运算符映射预留：`operators/`（统一 `=, !=, >, >=, <, <=, in, nin, and, or, not` 映射注册）
-- Mongo 专属层：`lib/mongodb/common`
-    - 实例指纹：`iid.js`（`genInstanceId`，基于 `uri/db` 生成 `mdb:<hash>`）
-    - 排序与锚点：`sort.js`（`ensureStableSort` 补 `_id`，`reverseSort`，`pickAnchor`）
-    - `$expr` 词典序比较：`lexicographic-expr.js`（`buildLexiExpr`）
-    - 聚合分页管道：`agg-pipeline.js`（`buildPagePipelineA`：先分页后联表；`buildPagePipelineB`：先联表后分页，预留）
-    - 形状与稳定序列化：`shape.js`（Mongo 去敏 shape）、`stable-bson.js`（BSON 类型稳定序列化）
-    - 常量/校验：`constants.js`（如 `MAX_LIMIT_DEFAULT`），`validation.js`（Mongo 定制补充）
-- 适配器入口（薄）：`lib/mongodb/index.js`
-    - 连接/关闭；集合访问器 `collection(db, coll)` 暴露 `findOne/find/count/invalidate/...`
-    - 新增分页 API 通过公共模块拼装并走统一 Runner。
-
-> 未来 SQL 族预留：`lib/sql/common`（`keyset.js` 生成 `(k1,k2,id)>(?,?,?)` 条件；`sort.js` 补 `id`；`shape.js`、`stable.js` SQL 版），按 `lib/mysql/index.js`、`lib/postgres/index.js` 增加适配器入口。
+## 规范继承
+本项目遵循 `.github/guidelines.md` 通用规范。以下仅列出项目特定配置和例外。
 
 ---
 
-## 如何运行测试
-- Windows/PowerShell：
-    - cd D:\Project\monSQLize
-    - npm test（等价：node test\run-tests.js）
-- Linux（CI 参考）：
-    - cd ./monSQLize && npm test
+## 项目信息
 
-说明：目前无需构建步骤（lib\ 已提交）。若将来需要构建，会在 package.json 的 scripts 中定义。
+- **类型**: Node.js 库（CommonJS）
+- **定位**: 多数据库统一读 API
+- **运行时**: Node.js 18.x, 20.x
+- **操作系统**: Windows, Ubuntu (Linux)
+- **数据库**: MongoDB 4.x+（当前），未来扩展 MySQL、PostgreSQL
 
-## 约定与编码风格（差异点）
-- 运行时：CommonJS；为 TS 使用者提供 index.d.ts。
-- 测试：自包含；修复/特性优先补充覆盖。
-- 日志：仅输出“形状/字段集合”，不含敏感值。
-- 注释：中文为主；必要英文术语用括号注明（如：命名空间（namespace））；行宽 ≤100。
+---
 
-## 与文档联动
-- 变更公共 API/默认值/示例时，更新 monSQLize/README.md。
-- 对外可见变更在 monSQLize/CHANGELOG.md 的 [Unreleased] 追加条目。
-- 每个功能都需要的在 monSQLize/examples/mongodb.js 添加演示示例
+## 本地命令
 
-## Junie 如何校验改动
-1. 定位影响文件（通常在 monSQLize/...）。
-2. 在项目目录运行测试（见“如何运行测试”）。
-3. 如 npm scripts/目录结构发生变化，请同步本 Profile。
+```powershell
+# 安装依赖
+npm ci
+
+# 运行测试
+npm test
+# 或
+node test/run-tests.js
+
+# 发布前检查
+npm pack
+```
+
+---
+
+## 目录结构
+
+```
+lib/
+├── common/          # 通用层（跨数据库逻辑）
+├── mongodb/         # MongoDB 适配器
+│   └── common/      # MongoDB 专属工具
+├── cache.js         # 缓存实现
+└── index.js         # 主入口
+
+examples/            # 示例代码（.examples.js）
+test/               # 测试文件（.test.js）
+docs/               # API 文档
+index.d.ts          # TypeScript 类型声明
+```
+
+---
 
 ## 例外与覆盖
-- 如需对根级通用规范做例外（例如慢查询阈值不同），请在此处记录：
-    - 条目、理由、影响面与迁移建议；并在 PR 中说明。
 
-## 项目规范
-- 需遵循 `.junie/guidelines.md` 文件
+### 代码风格例外
+相对通用规范（guidelines.md 第1节）的差异：
+- **引号**: 单引号（通用规范默认：双引号）
+- **分号**: 必须（通用规范默认：可选）
+- **模块系统**: CommonJS（通用规范默认：ESM）
+
+### 测试框架例外
+相对通用规范（guidelines.md 第7节）的差异：
+- **测试框架**: Mocha（通用规范默认：Vitest/Jest）
+- **断言库**: Node.js 内置 assert（通用规范默认：expect）
+
+### 测试覆盖率标准（项目提升）
+相对通用规范（guidelines.md 第7节默认 60%/60%/70%）：
+- **行覆盖率**: ≥ 70%（提升 10%）
+- **分支覆盖率**: ≥ 70%（提升 10%）
+- **核心 API**: ≥ 80%（提升 10%）
+
+### 其他例外
+- **无构建步骤**: 直接发布 `lib/` 源码
+
+---
+
+## 项目特定规则
+
+### 代码示例（遵循例外风格）
+
+```javascript
+// 导入导出（CommonJS + 单引号 + 分号）
+const MonSQLize = require('./index');
+module.exports = class MonSQLize { /* ... */ };
+
+// JSDoc 注释（遵循通用规范：中文 + 括号英文术语）
+/**
+ * 查询单条文档
+ * @param {Object} options - 查询选项
+ * @param {Object} options.query - 查询条件（query）
+ * @param {number} [options.cache] - 缓存时间（毫秒）
+ * @returns {Promise<Object|null>}
+ */
+async findOne(options) { /* ... */ }
+```
+
+---
+
+## 异步函数模式（项目特定）
+
+所有查询方法使用 runner 模式：
+
+```javascript
+async findOne(options) {
+    const runner = createRunner({ cache: this.cache, logger: this.logger });
+    return await runner.execute(async () => {
+        // 实际查询逻辑
+    });
+}
+```
+
+---
+
+## 架构层次规则（项目特定）
+
+### 代码放置规则
+- **通用层** (`lib/common/`): 跨数据库逻辑
+  - 参数校验、错误处理
+  - 缓存封装、日志封装
+  - 游标编解码、分页结果构建
+
+- **适配器层** (`lib/<database>/`): 数据库特定逻辑
+  - 连接管理
+  - 查询执行
+  - 数据库特定的形状构建
+
+### 判断标准
+- 适用于所有数据库 → `lib/common/`
+- 仅适用于 MongoDB → `lib/mongodb/`
+
+---
+
+## 测试模板（遵循例外风格）
+
+```javascript
+// test/findOne.test.js
+const assert = require('assert'); // Node.js 内置断言
+const MonSQLize = require('../lib/index'); // CommonJS
+
+describe('findOne', () => {
+    let client, collection;
+
+    before(async () => {
+        client = new MonSQLize({
+            type: 'mongodb',
+            databaseName: 'test',
+            config: { uri: 'mongodb://localhost:27017' }
+        });
+        const conn = await client.connect();
+        collection = conn.collection('test');
+    });
+
+    after(async () => {
+        // 清理
+    });
+
+    it('应该返回匹配的文档', async () => {
+        const doc = await collection.findOne({ query: { name: 'test' } });
+        assert.ok(doc);
+    });
+
+    it('应该在无匹配时返回 null', async () => {
+        const doc = await collection.findOne({ query: { name: 'nonexistent' } });
+        assert.strictEqual(doc, null);
+    });
+});
+```
+
+---
+
+## 示例代码模板（遵循例外风格）
+
+```javascript
+// examples/findOne.examples.js
+const MonSQLize = require('../lib/index'); // CommonJS + 单引号
+
+/**
+ * findOne 示例
+ * 演示基本查询、缓存、跨库访问
+ */
+(async () => {
+    const client = new MonSQLize({
+        type: 'mongodb',
+        databaseName: 'test',
+        config: { uri: process.env.MONGO_URI || 'mongodb://localhost:27017' }
+    });
+
+    const { collection } = await client.connect();
+
+    // 基本查询
+    const doc = await collection('users').findOne({
+        query: { name: 'Alice' }
+    });
+
+    // 使用缓存
+    const cached = await collection('users').findOne({
+        query: { name: 'Alice' },
+        cache: 5000  // 5秒
+    });
+
+    console.log('查询结果:', doc);
+    console.log('缓存结果:', cached);
+})();
+```
+
+---
+
+## TypeScript 类型声明模板
+
+```typescript
+// index.d.ts
+declare module 'monsqlize' {
+    interface FindOneOptions {
+        query: Record<string, any>;
+        projection?: Record<string, 1 | 0> | string[];
+        cache?: number;
+        maxTimeMS?: number;
+    }
+
+    interface Collection {
+        findOne(options: FindOneOptions): Promise<any | null>;
+        find(options: FindOptions): Promise<any[]>;
+        count(options: CountOptions): Promise<number>;
+        invalidate(op?: 'find' | 'findOne' | 'count'): Promise<void>;
+    }
+}
+```
+
+---
+
+## 性能要求（项目特定）
+
+### 慢查询阈值
+- **默认**: 500ms
+- **行为**: 超过阈值输出 warn 日志（仅输出形状，遵循通用规范第10节）
+
+### 缓存键规则
+```javascript
+// 缓存键格式
+const cacheKey = `${iid}:${db}:${coll}:${op}:${queryShapeHash}`;
+// 示例: "abc123:mydb:users:findOne:hash456"
+```
+
+---
+
+## 快速检查清单（项目特定补充）
+
+在遵循 guidelines.md 第 3.1 节流程基础上，额外检查：
+
+### 代码风格检查
+- [ ] 使用单引号（不是双引号）
+- [ ] 所有语句结尾有分号
+- [ ] 使用 CommonJS 导出（require/module.exports）
+
+### 架构层次检查
+- [ ] 代码放置在正确的层级（common vs mongodb）
+- [ ] 使用 runner 模式封装异步操作
+
+### 测试框架检查
+- [ ] 使用 Mocha + assert 编写测试
+- [ ] 测试初始化包含 MonSQLize 实例创建
+
+### 示例代码检查
+- [ ] 示例使用 CommonJS require
+- [ ] 连接串使用环境变量或占位符
+
+### 性能检查
+- [ ] 慢查询日志仅输出形状（不含具体值）
+- [ ] 缓存键包含完整标识（iid:db:coll:op:hash）
+
+---
+
+## 常见问题
+
+### Q: 为什么使用 CommonJS 而不是 ESM？
+**A**: 为了兼容更多 Node.js 版本和用户环境，当前保持 CommonJS。未来可能迁移到 ESM。
+
+### Q: 为什么使用 Mocha 而不是 Vitest/Jest？
+**A**: 项目历史原因，已有大量 Mocha 测试。保持一致性比迁移带来的收益更大。
+
+### Q: 逻辑应该放在 common 还是 mongodb？
+**A**: 
+- 参数校验、缓存、日志 → `lib/common/`
+- Aggregation pipeline、连接管理 → `lib/mongodb/`
+
+### Q: 测试需要真实 MongoDB 环境吗？
+**A**: 是的。使用本地 MongoDB 或测试容器。CI 环境会自动启动 MongoDB 服务。
+
+---
+
+**最后更新**: 2025-10-12

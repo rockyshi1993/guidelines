@@ -1,4 +1,9 @@
-# Junie Profile（chatAI）
+# Profile（chatAI）
+
+## 项目规范
+本项目需遵循 `.github/guidelines.md` 通用规范。以下为项目特定配置和例外。
+
+---
 
 ## 关键目录与入口
 - 前端页面：src\pages\index\index.js

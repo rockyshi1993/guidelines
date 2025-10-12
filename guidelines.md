@@ -1,6 +1,6 @@
 ### 工作区通用规范
 
-本规范用于在同一仓库内统一管理多个项目（库/服务/CLI；Node/Python/Go/Java/Rust…），以一致流程交付高质量变更。各项目通过根级集中式 \.junie\profiles/<project>.md 声明运行命令、约束与“例外/覆盖”。
+本规范用于在同一仓库内统一管理多个项目（库/服务/CLI；Node/Python/Go/Java/Rust…），以一致流程交付高质量变更。各项目通过根级集中式 \.github\profiles/<project>.md 声明运行命令、约束与“例外/覆盖”。
 
 ---
 
@@ -10,15 +10,18 @@
 - 编码：`UTF-8`
 - 注释与文档：中文为主，英文术语用括号注明（如：命名空间（namespace））
 - 行宽：≤100
-- 建议在仓库根提交 `.editorconfig` 与 `.gitattributes` 统一风格（模板见“附录 A”）
+- **引号**：双引号（项目可覆盖为单引号）
+- **分号**：可选（项目可覆盖为必须）
+- **模块系统**：ESM（项目可覆盖为 CommonJS）
+- 建议在仓库根提交 `.editorconfig` 与 `.gitattributes` 统一风格（模板见"附录 A"）
 
 ---
 
 ### 2) Profile 选择策略（集中式）
-- 根级集中式：由 `.junie/profiles/<project>.md` 与 `.junie/guidelines.md` 共同构成，保证项目特有配置覆盖全局规范。, 其中`<project>` 表示根目录项目目录名称
-- 兜底：若未找到 `<project>.md`，使用 \.junie\guidelines.md（本文）并提示补齐。
-- 显式指定：允许通过环境变量 `JUNIE_PROFILE` 指定自定义路径（临时/实验用途）。
-- 迁移提示：不再读取项目内 `<项目根>\.junie\profile.md`；如有历史文件，请迁移至根级 `profiles/<project>.md` 并删除旧文件，避免歧义。
+- 根级集中式：由 `.github/profiles/<project>.md` 与 `.github/guidelines.md` 共同构成，保证项目特有配置覆盖全局规范。, 其中`<project>` 表示根目录项目目录名称
+- 兜底：若未找到 `<project>.md`，使用 \.github\guidelines.md（本文）并提示补齐。
+- 显式指定：允许通过环境变量 `GITHUB_PROFILE` 指定自定义路径（临时/实验用途）。
+- 迁移提示：不再读取项目内 `<项目根>\.github\profile.md`；如有历史文件，请迁移至根级 `profiles/<project>.md` 并删除旧文件，避免歧义。
 
 ---
 
@@ -41,6 +44,87 @@
 - 文档更新（README/CHANGELOG/STATUS）：
 - 风险与回滚预案：
 ```
+
+---
+
+### 3.1) 功能添加完整流程（四要素：代码-测试-示例-文档）
+本章节适用于所有新增功能或修改现有功能的场景，确保交付完整、可验证、可维护的变更。
+
+#### 必需步骤（按顺序执行）
+1. **实现功能代码**
+   - 遵循基线风格（第1章）
+   - 进行输入校验（第9章）
+   - 适当的错误处理和日志（第10章）
+
+2. **编写测试用例**（强制）
+   - 位置：`test/` 目录，文件名与功能模块对应（如 `findPage.test.js`）
+   - 覆盖要求：
+     - ✅ 正常路径（主要使用场景）
+     - ✅ 异常路径（非法输入、边界条件）
+     - ✅ 边界用例（空值、最小/最大值、并发、超时）
+   - 命名规范：测试描述用中文，聚焦行为而非实现
+   - 验证方式：`npm test` 或项目定义的测试命令
+
+3. **提供示例代码**（强制）
+   - 位置：`examples/` 目录，文件名与功能对应（如 `findPage.examples.js`）
+   - 要求：
+     - ✅ 独立可运行（可直接执行验证）
+     - ✅ 详细注释（功能描述、参数说明、返回值、预期行为）
+     - ✅ 覆盖主要使用场景（至少1-2个典型场景）
+     - ✅ 使用占位配置（如 `.env.example`），不含真实凭据
+   - 验证方式：手动运行示例文件，确保输出符合预期
+
+4. **更新文档**（强制）
+   - `CHANGELOG.md`：在 `[Unreleased]` 下添加条目（Added/Changed/Fixed 等）
+   - `README.md`：
+     - 添加/更新功能说明、API 参数、返回值
+     - 引用 `examples/` 中的示例（保持一致性）
+     - 标注默认值、限制、注意事项
+   - `STATUS.md`：更新功能状态（计划中 → 进行中 → 已实现）
+   - 类型声明文件（如 `index.d.ts`）：同步更新类型定义和 JSDoc
+
+5. **自检与验证**（提交前）
+   - [ ] 测试全部通过（本地 + CI 矩阵）
+   - [ ] 示例可独立运行且输出正确
+   - [ ] 文档与代码一致（API 签名、参数、返回值）
+   - [ ] 无敏感信息泄露（日志、注释、示例）
+   - [ ] 类型声明文件已更新（如适用）
+
+#### 流程图（快速参考）
+```
+功能需求
+   ↓
+[1] 实现代码 → [2] 编写测试 → [3] 提供示例 → [4] 更新文档 → [5] 自检验证
+   ↓              ↓                ↓                ↓                ↓
+代码实现      test/*.test.js   examples/*.js    CHANGELOG +      全部通过
+            （正反边界）      （可运行+注释）   README +         ↓
+                                              STATUS +        提交 PR
+                                              类型声明
+```
+
+#### 示例场景：新增 `findPage` 功能
+```
+1. 实现 lib/mongodb/find-page.js
+2. 编写 test/findPage.test.js（正常分页、边界limit、空结果、并发请求）
+3. 提供 examples/findPage.examples.js（基础分页、排序、过滤组合）
+4. 更新文档：
+   - CHANGELOG.md: "## [Unreleased]\n- Added: `findPage` 分页查询支持"
+   - README.md: 添加 API 说明和示例引用
+   - docs/findPage.md: 详细文档（可选）
+   - index.d.ts: 添加类型定义
+5. 运行 npm test 和 node examples/findPage.examples.js 验证
+```
+
+#### 例外情况
+- **内部重构/性能优化**：若不改变公开 API，可省略示例和 README 更新，但仍需测试覆盖
+- **紧急修复（hotfix）**：可简化流程，但必须保留测试和 CHANGELOG
+- **实验性功能**：可在项目 Profile 中标注，放宽部分要求
+
+#### CI 自动检查
+- 测试用例存在且通过
+- `examples/` 目录包含对应示例文件
+- `CHANGELOG.md` 的 `[Unreleased]` 有更新（通过 git diff 检测）
+- 文档文件存在（README/CHANGELOG/STATUS）
 
 ---
 
@@ -127,6 +211,22 @@
     - 新增/修改示例代码必须手动验证可运行，保持与 README/文档一致
 
 ### 7) 测试与质量
+
+### 默认测试框架（可被 Profile 覆盖）
+- **Node.js**: Vitest / Jest（项目可覆盖为 Mocha）
+- **断言库**: Node.js 内置 assert / expect（根据测试框架）
+- **Python**: pytest
+- **Go**: 内置 testing 包
+- **Java**: JUnit
+- **Rust**: 内置 cargo test
+
+### 测试覆盖率默认标准（可被 Profile 覆盖）
+- **行覆盖率**: ≥ 60%
+- **分支覆盖率**: ≥ 60%
+- **核心 API**: ≥ 70%
+- 项目可在 Profile 中设定更高或更低的标准
+
+### 测试要求
 - 覆盖要求：新增/修改路径提供正反与边界用例；核心路径维持基础覆盖线（门槛可在项目 Profile 设定）。
 - 边界示例：
     - 输入为空/非法、分页参数边界、超时/重试边界；
@@ -149,9 +249,9 @@
 
 ---
 
-### 9) 错误处理与输入校验（Node 默认使用 Joi，已修复）
+### 9) 错误处理与输入校验
 - 公开 API 必做基本校验（类型/必填/范围），报错信息可行动且去敏；避免泄露连接 URI/凭据；保留原始错误于 `cause`。
-- Node/TypeScript 项目默认使用 `Joi`；建议错误结构：
+- 建议错误结构：
 ```
 {
     code: "VALIDATION_ERROR",
@@ -160,7 +260,14 @@
     cause?: any
 }
 ```
-- 参考（Node）：
+- 校验方案选择（项目根据需求自行选择）：
+    - Node.js: Joi / Zod / Yup / 自定义校验
+    - Python: pydantic / voluptuous
+    - Go: go-playground/validator
+    - Java: Jakarta Bean Validation
+    - Rust: validator
+
+- 参考示例（Node.js with Joi）：
 ```
 const Joi = require("joi");
 
@@ -182,8 +289,7 @@ function validateInput(input) {
     return value;
 }
 ```
-- 其他语言在各自 `profiles/<project>.md` 指定等效校验方案：
-    - Python→`pydantic`/`voluptuous`；Go→`go-playground/validator`；Java→`Jakarta Bean Validation`；Rust→`validator`。
+- 其他语言在各自 `profiles/<project>.md` 指定等效校验方案。
 
 ---
 
@@ -197,27 +303,7 @@ function validateInput(input) {
 
 ---
 
-### 11) 缓存策略（要点）
-- 启用条件：仅当 `TTL>0` 时启用缓存；单位建议毫秒；`0/未传` 表示直连后端。
-- 键形状：固定字段集（示例：`iid/type/db/collection/op/query/options`），采用稳定序列化。
-- 稳定序列化建议：
-    - 对象键名按字典序排序；
-    - 数值/布尔/Null 标准化；日期使用 ISO 8601（UTC）；
-    - 可使用稳定 JSON 序列化 + 哈希（如 SHA-256）生成最终键。
-- 失效：按项目定义的接口（如 `collection.invalidate(op?)`）在当前命名空间生效；底层 `delPattern` 仅用于中小规模场景。
-- 并发去重：相同键共享 inflight；异常/超时后清理 inflight，避免“幽灵占用”。
-- 内存预算：支持 `maxSize/maxMemory`（估算），LRU 淘汰最久未使用项；可选“后台刷新”（stale-while-revalidate）。
-
----
-
-### 12) 性能预算与准入
-- 目标：缓存命中 `p50 < 10ms`；直连 `p95 < 100ms`（示例指标，可按需调整）。
-- 观测：启用统计（如 `enableStats`）查看命中率与淘汰；定期汇总慢日志。
-- 准入：影响平均/尾延迟的改动需在 PR 中说明取舍与验证数据。
-
----
-
-### 13) 兼容性与 CI 矩阵
+### 11) 兼容性与 CI 矩阵
 - 在项目 Profile 或 `README` 声明受支持的运行时/依赖主版本；大版本升级在 `CHANGELOG` 标注影响与迁移建议。
 - CI 覆盖与声明矩阵一致（语言版本 × OS）。
 - 参考矩阵：
@@ -229,14 +315,14 @@ function validateInput(input) {
 
 ---
 
-### 14) 目录/导出与 TypeScript 声明
+### 12) 目录/导出与 TypeScript 声明
 - 公共 API 门面清晰；Node 库仅通过入口导出，内部模块保持私有。
 - 文件命名 kebab-case；导出采用驼峰（可按项目风格覆盖）。
 - 若提供类型声明（如 `index.d.ts`），应为单一入口；实现变更需同步参数与返回类型与中文 JSDoc；可选引入 `tsd/dtslint` 做轻量校验。
 
 ---
 
-### 15) API 稳定性与弃用（Deprecation）
+### 13) API 稳定性与弃用（Deprecation）
 - 稳定性：公开 API 在 patch/minor 中保持向后兼容；破坏性改动仅随 major 发布。
 - 弃用流程：
     - 在 `CHANGELOG` 标注 `Deprecated` 与替代方案；
@@ -246,33 +332,38 @@ function validateInput(input) {
 
 ---
 
-### 16) 安全与配置
+### 14) 安全与配置
 - 凭据通过环境变量或本地 `.env` 注入（不纳入版本控制）；示例/测试使用占位符。
 - 默认提供合理的超时/限流/缓存 TTL 等安全参数；高敏场景避免过长 TTL。
 - 供应链安全：建议启用 Dependabot/Renovate；在 CI 引入 SAST/Secret Scan（如 CodeQL/Trivy/Gitleaks 按需选择）。
 
 ---
 
-### 17) 文档联动与自检
+### 15) 文档联动与自检
 - 每次对外可见变更均需更新 `CHANGELOG [Unreleased]`；必要时更新 `README/STATUS`。
 - 提交前比对 `README/示例` 与类型/接口声明（如 `index.d.ts`/接口文档）一致性。
 - 在 CI 启用“文档自检”：缺失 `README/CHANGELOG` 直接失败；`STATUS` 可按项目 Profile 例外放宽。
 
 ---
 
-### 18) PR 合并门禁清单
+### 16) PR 合并门禁清单
 - [ ] 是否改变公开 API/行为/性能/兼容性/缓存键形状？
 - [ ] 对应项目测试在声明矩阵下全部通过？
+- [ ] **测试用例已添加/更新**（`test/` 目录，覆盖正常+异常+边界场景）？
+- [ ] **示例代码已添加/更新**（`examples/` 目录，可独立运行且有详细注释）？
+- [ ] **示例已手动验证**（运行成功且输出符合预期）？
 - [ ] `CHANGELOG [Unreleased]` 已更新？是否需要更新 `README/STATUS`？
+- [ ] **文档与代码一致**（API 签名、参数、返回值、类型声明文件）？
 - [ ] 日志与注释已去敏，无凭据/个人数据？
 - [ ] 版本语义（patch/minor/major）已判定并同步至版本文件？
 - [ ] CI `docs-check` 通过（`README/CHANGELOG` 存在；`STATUS` 依项目规则）？
+- [ ] **功能添加完整流程**（参见第3.1章）已遵循？
 
 ---
 
-### 19) 项目 Profile 最小模板（位于 \.junie\profiles/<project>.md）
+### 17) 项目 Profile 最小模板（位于 \.github\profiles/<project>.md）
 ```
-# <项目名> 的 Junie Profile（集中式）
+# <项目名> 的 Github Profile（集中式）
 
 ## 关键目录与运行时
 - 主目录与入口：`src/`（示例）
@@ -298,7 +389,7 @@ function validateInput(input) {
 - hotfix + patch 流程
 ```
 
-### 20) 功能示例目录（examples）
+### 18) 功能示例目录（examples）
 - **适用范围**：每次新增功能或修改现有功能的行为/参数，都必须在仓库 `examples/` 目录下提供对应示例。
 - **示例目录结构**（多语言项目可按语言分层）：
 - **独立可运行**：示例代码应可直接执行，验证功能行为；仅允许使用 `.env.examples` 等占位配置。
@@ -514,5 +605,3 @@ jobs:
           branch: chore/auto-create-docs
           base: ${{ github.ref_name }}
 ```
-
----

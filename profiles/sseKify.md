@@ -1,6 +1,11 @@
-# 项目 Profile：sseKify（Junie 专用）
+# 项目 Profile：sseKify
 
 本节仅适用于路径 D:\Project\sseKify\... 的改动。用于指导自动化执行（测试/校验）与贡献者快速定位。使用说明、API 与示例以 sseKify/README.md 为准。
+
+## 项目规范
+本项目需遵循 `.github/guidelines.md` 通用规范。以下为项目特定配置和例外。
+
+---
 
 ## 项目概览
 - 目标：框架无关的 Server‑Sent Events（SSE）工具，支持单实例与通过 Redis Pub/Sub 的跨实例分发；具备心跳保活、Last-Event-ID 重放缓冲、每连接写入队列与背压治理、按用户/全体/房间分发、优雅关闭与基础指标。
@@ -53,7 +58,7 @@
 - CHANGELOG：每次对外可见变更在 sseKify/CHANGELOG.md 的 [Unreleased] 追加条目；发版时下沉并写日期。
 - STATUS/ROADMAP：能力/里程碑更新同步 STATUS.md，并将“计划中→已实现”同步到 CHANGELOG 未发布区。
 
-## Junie 如何校验改动
+## 如何校验改动
 1) 按路径命中项目：D:\Project\sseKify\...
 2) 在项目目录执行测试：npm test（Vitest，无外部依赖）
 3) 如 npm scripts/目录结构/Node 版本范围（engines）变更，请同步本 Profile 并检查根级 CI 矩阵是否需要调整。

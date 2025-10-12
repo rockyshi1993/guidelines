@@ -1,4 +1,9 @@
-# trip-assistant 的 Junie Profile（集中式）
+# trip-assistant 的 Profile（集中式）
+
+## 项目规范
+本项目需遵循 `.github/guidelines.md` 通用规范。以下为项目特定配置和例外。
+
+---
 
 ## 关键目录与运行时
 - 主目录与入口：`trip-assistant/`（按实际结构调整）

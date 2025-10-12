@@ -1,4 +1,9 @@
-# ndsk_core 的 Junie Profile（集中式）
+# ndsk_core 的 Profile（集中式）
+
+## 项目规范
+本项目需遵循 `.github/guidelines.md` 通用规范。以下为项目特定配置和例外。
+
+---
 
 ## 关键目录与运行时
 - 主目录与入口：`ndsk_core/`（按实际子目录调整）
