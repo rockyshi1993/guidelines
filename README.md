@@ -6,15 +6,106 @@
 
 ## 快速导航
 
-- 📖 [完整规范](#1-基线风格与语言) - 20个章节的详细规范
-- 📝 [Bug 修复分析模板](./bug-fix-analysis-template.md) - 修复 Bug 前必读，理解问题本质
+- 📖 [完整规范](#1-基线风格与语言) - 19个章节的详细规范
+- 📝 [Bug 修复分析模板](./templates/bug-fix-analysis-template.md) - 修复 Bug 前必读，理解问题本质
 - 📁 [项目配置](./profiles/) - 各项目的特定配置
 
 ---
 
+
+
+## 🤖 AI 决策指南（常见场景处理）
+
+> 本章节帮助 AI 助手在特定场景下做出正确决策
+
+### 场景1：用户新增或修改功能
+**触发条件**：代码变更涉及新增/修改 API、函数、模块
+**AI 决策流程**：
+1. ✅ 检查是否添加测试用例（test/ 目录）→ 未添加则提醒
+2. ✅ 检查是否提供示例代码（examples/ 目录）→ 未提供则提醒
+3. ✅ 检查是否更新文档（README/CHANGELOG/STATUS）→ 未更新则提醒
+4. ✅ 参考：[第3.1章](#31-功能添加完整流程四要素代码-测试-示例-文档)
+
+### 场景2：大规模文件编辑（>100行）
+**触发条件**：需要删除/修改超过100行内容
+**AI 决策**：
+- ❌ 不使用 multi_edit 工具
+- ✅ 建议使用 PowerShell/Bash 脚本
+- ✅ 提供完整的备份和恢复命令
+- ✅ 参考：[第19章](#19-大规模文件编辑策略ai-辅助开发)
+
+### 场景3：Bug 修复
+**触发条件**：用户报告 Bug 或需要修复问题
+**AI 决策**：
+1. ✅ 引导用户使用 [Bug 分析模板](./templates/bug-fix-analysis-template.md)
+2. ✅ 提醒记录：根本原因、影响对比、修复方案、经验教训
+3. ✅ 归档到：<项目>/bug-analysis/YYYY-MM-DD-问题描述.md
+
+### 场景4：测试覆盖率判断
+**触发条件**：用户询问测试要求或提交代码
+**AI 决策**：
+- 默认标准：≥60%（核心API ≥70%）
+- 检查项目 Profile 是否有自定义标准
+- 参考：[第7章](#7-测试与质量)
+
+### 场景5：提交信息检查
+**触发条件**：用户需要提交代码
+**AI 决策**：
+- 格式：	ype(scope): message
+- type: feat/fix/docs/test/refactor/chore/build/perf/ci
+- 示例：eat(api): 添加分页查询
+- 参考：[第3章](#3-提交与-pr-规范)
+
+### 场景6：文档更新判断
+**触发条件**：代码修改完成
+**AI 决策 - 必须更新文档的情况**：
+- ✅ 修改公开 API
+- ✅ 修改默认值
+- ✅ 修改示例代码
+- ✅ 修改配置项
+- ✅ 修改行为逻辑
+- 参考：[第6章](#6-代码修改与文档联动)
+
+### 场景7：多语言项目处理
+**触发条件**：项目涉及 Node/Python/Go/Java/Rust 等
+**AI 决策**：
+1. 检查是否存在 profiles/<project>.md
+2. 读取项目特定的命令和测试框架配置
+3. 使用项目定义的命令，而非默认命令
+4. 参考：[第8章](#8-多语言技术栈默认命令可被-profile-覆盖)
+
+### 场景8：日志记录审查
+**触发条件**：代码中包含日志输出
+**AI 决策 - 严禁记录**：
+- ❌ 密码、令牌
+- ❌ 完整连接串
+- ❌ 个人数据
+- ✅ 建议：使用"查询形状"代替具体值
+- 参考：[第10章](#10-日志分级与敏感信息清洗含可观测性增强)
+
+### 场景9：API 废弃流程
+**触发条件**：需要废弃某个 API
+**AI 决策流程**：
+1. ✅ 在 CHANGELOG 标注 Deprecated + 替代方案
+2. ✅ 在 README 标注迁移建议
+3. ✅ 添加运行期 warn（由环境变量控制）
+4. ✅ 至少保留一个 minor 周期
+5. ✅ 参考：[第13章](#13-api-稳定性与弃用deprecation)
+
+### 场景10：PR 合并前检查
+**触发条件**：用户准备提交 PR
+**AI 决策 - 检查清单**：
+- [ ] 测试全部通过
+- [ ] 示例代码已添加/更新
+- [ ] 文档已同步更新
+- [ ] 无敏感信息泄露
+- [ ] CHANGELOG 已更新
+- 参考：[第16章](#16-pr-合并门禁清单) 完整清单
+
+---
 ## Bug 修复分析模板
 
-> 👉 **重要**：修复 Bug 前，必须使用 [Bug 修复分析模板](./bug-fix-analysis-template.md) 记录分析过程
+> 👉 **重要**：修复 Bug 前，必须使用 [Bug 修复分析模板](./templates/bug-fix-analysis-template.md) 记录分析过程
 
 ### 为什么需要？
 
@@ -59,7 +150,7 @@ monSQLize/
 - **引号**：双引号（项目可覆盖为单引号）
 - **分号**：可选（项目可覆盖为必须）
 - **模块系统**：ESM（项目可覆盖为 CommonJS）
-- 建议在仓库根提交 `.editorconfig` 与 `.gitattributes` 统一风格（模板见"附录 A"）
+- 建议在仓库根提交 `.editorconfig` 与 `.gitattributes` 统一风格（模板见 [templates/file-templates.md](./templates/file-templates.md)）
 
 ---
 
@@ -456,198 +547,134 @@ function validateInput(input) {
 - CI 可选开启示例可运行检查，提醒开发者同步更新。
 ---
 
-### 附录 A：根级风格文件模板
-- `.editorconfig`
-```
-root = true
 
-[*]
-indent_style = space
-indent_size = 4
-end_of_line = lf
-charset = utf-8
-trim_trailing_whitespace = true
-insert_final_newline = true
-```
-- `.gitattributes`
-```
-* text=auto eol=lf
-```
 
 ---
 
-### 附录 B：文档最小模板
-- `README.md`
-```
-# <项目名>
+### 19) 大规模文件编辑策略（AI 辅助开发）
 
-## 简介
-一句话说明项目定位与核心能力。
+#### 适用场景
+- 删除大段内容（如附录、示例代码）
+- 重构大文件（>500行）结构
+- 批量迁移内容到新文件
+- 优化文档以减少 token 消耗
 
-## 支持矩阵
-- OS: Windows/Ubuntu
-- 运行时: <语言版本矩阵>
+#### 策略选择
 
-## 快速开始（PowerShell 示例）
-```
-- `CHANGELOG.md`
-```
-# Changelog
+**方案 A：PowerShell/Bash 脚本编辑**（推荐）
+- **适用**：删除大段连续内容、简单替换
+- **优势**：
+  - ✅ 可靠稳定，不受 AI 上下文限制
+  - ✅ 可精确定位删除范围（如从"### 附录 A"到文件末尾）
+  - ✅ UTF-8 编码控制准确
+- **实施步骤**：
+  1. 备份原文件：`Copy-Item file.md file.md.backup`
+  2. 使用脚本精确删除/替换：
+     ``powershell
+     $content = [System.IO.File]::ReadAllText("file.md", [System.Text.UTF8Encoding]::new($false))
+     $pos = $content.IndexOf("### 附录 A")
+     if ($pos -gt 0) {
+         $newContent = $content.Substring(0, $pos) + "新内容"
+         [System.IO.File]::WriteAllText("file.md", $newContent, [System.Text.UTF8Encoding]::new($false))
+     }
+     ``
+  3. 验证并删除备份
 
-所有显著变更将记录在此文件，遵循 Keep a Changelog 与 SemVer。
+**方案 B：AI 工具 multi_edit**（受限场景）
+- **适用**：小范围精确修改（<50行）、多处分散修改
+- **限制**：
+  - ⚠️ 大段删除可能触发模型错误
+  - ⚠️ 需要精确匹配 old_string（包括空格/换行）
+  - ⚠️ 编码问题可能导致乱码
+- **实施步骤**：
+  1. 先 `read_file` 查看最新内容
+  2. 分小段编辑（每次<100行）
+  3. 每次编辑后验证结果
 
-## [Unreleased]
-- Added:
-- Changed:
-- Fixed:
-- Deprecated:
-- Removed:
-- Performance:
-- Security:
-```
-- `STATUS.md`
-```
-# 状态与路线图
+**方案 C：混合策略**（最佳实践）
+- **流程**：
+  1. AI 分析优化方案（保留什么、删除什么、移动到哪里）
+  2. AI 创建新文件（templates/、examples/）
+  3. **PowerShell 执行大规模删除/重构**
+  4. AI 修改小细节（链接更新、引用修正）
+  5. AI 验证最终效果
 
-- 计划中：
-- 进行中：
-- 已实现：
+#### 最佳实践
 
-注：由“计划中→已实现”需同步 CHANGELOG 的 [Unreleased]。
-```
+1. **始终备份**
+   ``powershell
+   Copy-Item "guidelines/README.md" "guidelines/README.md.backup"
+   ``
 
----
+2. **UTF-8 编码控制**
+   - 使用 `[System.Text.UTF8Encoding]::new($false)` 避免 BOM
+   - 避免 PowerShell 的 `Set-Content`（默认 UTF-16）
 
-### 附录 C：本地自检与初始化脚本（PowerShell 示例，幂等）
-```
-Param(
-    [Parameter(Mandatory=$false)] [ValidateSet("check","fix")] [string] $mode = "fix",
-    [Parameter(Mandatory=$false)] [string[]] $projects = @(
-        "D:\\Project\\vsse" # 示例：按需维护项目根路径清单
-    )
-)
+3. **分步验证**
+   - 大规模编辑后立即 `read_file` 查看结果
+   - 检查文件大小变化：`Get-Item file.md | Select-Object Length`
+   - 对比字符数和 token 估算
 
-function Ensure-File {
-    param([string] $Path, [string] $Content)
-    if (Test-Path -LiteralPath $Path) { return $false }
-    if ($mode -eq "check") { throw "缺失文件: $Path" }
-    $dir = Split-Path -Parent $Path
-    if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
-    $lf = $Content -replace "\r\n?","\n"
-    [System.IO.File]::WriteAllText($Path, $lf, [System.Text.Encoding]::UTF8)
-    return $true
+4. **失败恢复**
+   ``powershell
+   # 如果编辑失败，快速恢复
+   Copy-Item "file.md.backup" "file.md" -Force
+   ``
+
+5. **避免的陷阱**
+   - ❌ 不要用 multi_edit 删除 >100行内容
+   - ❌ 不要在未备份时执行大规模修改
+   - ❌ 不要使用 `Out-File` 或 `>` 重定向（编码问题）
+
+#### 案例参考
+
+**案例：README.md 优化（删除 3 个大附录）**
+
+``powershell
+# 1. 备份
+Copy-Item "guidelines/README.md" "guidelines/README.md.backup"
+
+# 2. 精确删除从"附录 A"到文件末尾的所有内容
+$content = [System.IO.File]::ReadAllText("guidelines/README.md", [System.Text.UTF8Encoding]::new($false))
+$pos = $content.IndexOf("### 附录 A：根级风格文件模板")
+if ($pos -gt 0) {
+    $beforeAppendix = $content.Substring(0, $pos).TrimEnd()
+    $newContent = $beforeAppendix + "`
+`
+---`
+`
+## 附录：模板与脚本`
+`
+" +
+                  "详细模板和自动化脚本已移至独立文件，按需查阅：`
+`
+" +
+                  "- 📄 [文件模板](./templates/file-templates.md)`
+" +
+                  "- 🤖 [自动化脚本](./templates/automation-scripts.md)`
+"
+    [System.IO.File]::WriteAllText("guidelines/README.md", $newContent, [System.Text.UTF8Encoding]::new($false))
 }
 
-# 1) 仓库根风格文件
-$repoRoot = (Get-Location).Path
-$changed = $false
-$changed = (Ensure-File -Path (Join-Path $repoRoot ".editorconfig") -Content @"
-root = true
+# 3. 验证
+$before = (Get-Item "guidelines/README.md.backup").Length
+$after = (Get-Item "guidelines/README.md").Length
+Write-Host "原始: $before 字节, 优化后: $after 字节, 节省: $($before - $after) 字节"
 
-[*]
-indent_style = space
-indent_size = 4
-end_of_line = lf
-charset = utf-8
-trim_trailing_whitespace = true
-insert_final_newline = true
-"@) -or $changed
-$changed = (Ensure-File -Path (Join-Path $repoRoot ".gitattributes") -Content "* text=auto eol=lf
-") -or $changed
+# 4. 确认无误后删除备份
+Remove-Item "guidelines/README.md.backup"
+``
 
-# 2) 各项目文档文件
-$readme = @"# <项目名>
-
-## 简介
-一句话说明项目定位与核心能力。
-
-## 支持矩阵
-- OS: Windows/Ubuntu
-- 运行时: <语言版本矩阵>
-
-## 快速开始（PowerShell 示例）
-"@
-$changelog = @"# Changelog
-
-所有显著变更将记录在此文件，遵循 Keep a Changelog 与 SemVer。
-
-## [Unreleased]
-- Added:
-- Changed:
-- Fixed:
-- Deprecated:
-- Removed:
-- Performance:
-- Security:
-"@
-$status = @"# 状态与路线图
-
-- 计划中：
-- 进行中：
-- 已实现：
-
-注：由“计划中→已实现”需同步 CHANGELOG 的 [Unreleased]。
-"@
-
-foreach ($p in $projects) {
-    if (-not (Test-Path -LiteralPath $p)) { Write-Host "跳过不存在目录: $p"; continue }
-    $changed = (Ensure-File -Path (Join-Path $p "README.md") -Content $readme) -or $changed
-    $changed = (Ensure-File -Path (Join-Path $p "CHANGELOG.md") -Content $changelog) -or $changed
-    $changed = (Ensure-File -Path (Join-Path $p "STATUS.md") -Content $status) -or $changed
-}
-
-if ($mode -eq "fix" -and $changed) { Write-Host "已创建缺失模板文件。" }
-elseif ($mode -eq "check") { Write-Host "自检完成：未发现缺失文件。" }
-```
+**效果**：
+- 原始 16,037 字符 → 优化后 12,061 字符
+- 节省 25% token，保持规范完整
 
 ---
+---
 
-### 附录 D：GitHub Actions（CI 自检与自动补齐 PR 示例）
-```
-name: docs-ensure
+## 附录：模板与脚本
 
-on:
-  pull_request:
-  workflow_dispatch:
-    inputs:
-      autofix:
-        description: "Auto-fix missing docs and open PR"
-        required: false
-        default: "false"
+详细模板和自动化脚本已移至独立文件，按需查阅：
 
-jobs:
-  docs-check:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run docs check
-        shell: pwsh
-        run: |
-          pwsh tools/ensure-project-docs.ps1 -mode check
-
-  docs-fix-pr:
-    if: ${{ github.event.inputs.autofix == 'true' && github.ref != 'refs/heads/main' }}
-    runs-on: windows-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Auto fix missing docs
-        shell: pwsh
-        run: |
-          pwsh tools/ensure-project-docs.ps1 -mode fix
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
-        with:
-          commit-message: "chore(docs): auto-create missing docs and style files"
-          title: "chore(docs): auto-create missing docs and style files"
-          body: |
-            自动创建缺失的 README/CHANGELOG/STATUS 以及根级 .editorconfig/.gitattributes。
-            - 统一缩进 4 空格、LF 行结尾。
-          branch: chore/auto-create-docs
-          base: ${{ github.ref_name }}
-```
+- 📄 [文件模板](./templates/file-templates.md) - .editorconfig、.gitattributes、README、CHANGELOG、STATUS、Profile 模板
+- 🤖 [自动化脚本](./templates/automation-scripts.md) - PowerShell 自检脚本、GitHub Actions 配置
