@@ -551,7 +551,121 @@ function validateInput(input) {
 
 ---
 
-### 19) 大规模文件编辑策略（AI 辅助开发）
+### 19) 临时文档清理规范
+
+#### 临时文档定义
+临时文档是指在项目改进、重构或开发过程中创建的**一次性记录文档**，完成后应当删除，避免项目文档冗余。
+
+#### 应删除的临时文档类型
+
+**改进报告类**（项目完成后删除）：
+- ❌ `IMPROVEMENTS.md` - 改进详情报告
+- ❌ `VERIFICATION.md` - 验证报告
+- ❌ `MIGRATION.md` - 迁移指南（完成后）
+- ❌ `REFACTORING.md` - 重构记录
+
+**重复内容类**（保留一个，删除其他）：
+- ❌ `GETTING_STARTED.md` - 当已有 `QUICKSTART.md` 时
+- ❌ `SETUP.md` - 当 `README.md` 已包含安装说明时
+- ❌ 多个类似的快速开始指南
+
+**开发过程记录类**（归档或删除）：
+- ❌ `TODO.md` - 待办事项（完成后删除或归档到 `STATUS.md`）
+- ❌ `NOTES.md` / `DEV_NOTES.md` - 开发笔记
+- ❌ `PLAN.md` - 开发计划（完成后归档到 `CHANGELOG.md`）
+
+#### 应保留的核心文档
+
+**标准必需文档**：
+- ✅ `README.md` - 项目总览和入口（必需）
+- ✅ `CHANGELOG.md` - 版本变更记录（必需）
+- ✅ `CONTRIBUTING.md` - 贡献指南（推荐）
+- ✅ `LICENSE` - 许可证（必需）
+
+**用户帮助文档**：
+- ✅ `QUICKSTART.md` - 快速开始指南
+- ✅ `TROUBLESHOOTING.md` - 故障排除指南
+- ✅ `FAQ.md` - 常见问题
+
+**开发者文档**：
+- ✅ `STRUCTURE.md` / `ARCHITECTURE.md` - 项目结构/架构
+- ✅ `STATUS.md` / `ROADMAP.md` - 项目状态/路线图
+- ✅ `SECURITY.md` - 安全政策
+
+#### 临时文档处理流程
+
+1. **创建时标注**
+   - 在临时文档顶部添加标记：
+   ```markdown
+   > **📝 临时文档** - 本文档为项目改进/重构过程记录，完成后将删除
+   ```
+
+2. **内容归档**
+   - 重要信息迁移到 `CHANGELOG.md`（改进历史）
+   - 技术决策归档到 `ARCHITECTURE.md` 或 `docs/decisions/`
+   - 问题修复记录到 `bug-analysis/`（参见第3章）
+
+3. **删除时机**
+   - 项目改进完成并验证通过
+   - PR 已合并到主分支
+   - 相关信息已归档到标准文档
+
+4. **删除方式**
+   ```powershell
+   # 一次性删除多个临时文档
+   Remove-Item IMPROVEMENTS.md, VERIFICATION.md, GETTING_STARTED.md
+   
+   # 验证删除
+   Get-ChildItem -Filter "*.md" | Select-Object Name
+   ```
+
+#### 最佳实践
+
+**归档而非删除**：
+- 重要的改进决策 → `CHANGELOG.md` 的 `[x.y.z]` 版本条目
+- 架构重构说明 → `docs/architecture/` 或 `ARCHITECTURE.md`
+- Bug 分析报告 → `<项目>/bug-analysis/YYYY-MM-DD-问题.md`（永久保留）
+
+**文档精简原则**：
+- 每个主题只保留一个文档（避免 `QUICKSTART.md` + `GETTING_STARTED.md` + `SETUP.md` 并存）
+- 临时记录尽量使用 Git commit message 或 PR 描述
+- 长期有价值的内容才独立成文档
+
+**CI 检查（可选）**：
+```yaml
+# 检查是否存在临时文档（警告但不失败）
+- name: Check for temporary docs
+  run: |
+    if (Test-Path "IMPROVEMENTS.md") { Write-Warning "Found temporary doc: IMPROVEMENTS.md" }
+    if (Test-Path "VERIFICATION.md") { Write-Warning "Found temporary doc: VERIFICATION.md" }
+```
+
+#### 示例：项目改进完成后的清理
+
+**场景**：Multi-MCP 项目完成规范化改进
+
+**删除的临时文档**：
+```powershell
+Remove-Item IMPROVEMENTS.md, VERIFICATION.md, GETTING_STARTED.md
+```
+
+**保留的核心文档**：
+- `README.md` - 项目总览
+- `QUICKSTART.md` - 快速开始
+- `CHANGELOG.md` - 版本历史（包含改进记录）
+- `CONTRIBUTING.md` - 贡献指南
+- `TROUBLESHOOTING.md` - 故障排除
+- `STATUS.md` - 项目状态
+- `STRUCTURE.md` - 目录结构
+
+**归档的信息**：
+- 改进详情 → `CHANGELOG.md` 的 `[1.0.0]` 版本条目
+- 重要决策 → `CONTRIBUTING.md` 的相关章节
+- 验证结果 → Git commit message
+
+---
+
+### 20) 大规模文件编辑策略（AI 辅助开发）
 
 #### 适用场景
 - 删除大段内容（如附录、示例代码）
