@@ -6,6 +6,7 @@
 ## 快速参考
 - 📖 [完整规范文档](../guidelines/README.md) - 详细的项目规范（20个章节）
 - 📁 [项目配置](../guidelines/profiles/) - 各项目的特定配置
+- - 🤖 [MCP 调用规则](../guidelines/mcp-calling-rules.md) - AI 助手调用外部模型的规范
 
 ## 关键提示
 1. **编码风格**: 4空格缩进，LF行尾，UTF-8编码，行宽≤100
