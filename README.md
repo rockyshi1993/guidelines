@@ -25,7 +25,7 @@
 
 | 文档 | 说明 | 受众 | 状态 |
 |------|------|------|------|
-| [AI 执行入口 v2.1](../.github/copilot-instructions.md) | AI 助手必读，快速决策树和检查清单 | AI 助手 | ✅ 当前 |
+| [AI 执行入口 v2.1](./assistant/copilot-instructions.md) | AI 助手必读，快速决策树和检查清单 | AI 助手 | ✅ 当前 |
 | [v2.0 完整规范](./guidelines/v2.md) | 20章节详细规范，包含场景触发器、决策矩阵 | AI 助手 + 开发者 | ✅ 当前 |
 | [MCP 调度规则](./mcp/v2.md) | AI 模型选择与调度规范 | AI 助手 | ✅ 当前 |
 
