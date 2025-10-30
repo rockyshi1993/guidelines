@@ -1,7 +1,7 @@
 # 项目规范文档
 
 > **最新版本**: 
-> - **AI执行入口**: [copilot-instructions.md v2.1](../.github/copilot-instructions.md) - AI助手快速决策树（2025-10-30）
+> - **AI执行入口**: [copilot-instructions.md v2.1](./assistant/copilot-instructions.md) - AI助手快速决策树（2025-10-30）
 > - **完整规范**: [v2.0](./guidelines/v2.md) - 20章节详细规范（2025-10-30）
 
 ---
@@ -159,7 +159,7 @@
 ### v2.1 (copilot-instructions.md) / v2.0 (v2.md) - 2025-10-30
 
 **版本说明**:
-- **copilot-instructions.md v2.1**: AI执行入口的优化版本，提供快速决策树
+- **assistant/copilot-instructions.md v2.1**: AI执行入口的优化版本，提供快速决策树
 - **guidelines/v2.md v2.0**: 完整规范的AI友好化版本
 
 **核心改进**:
