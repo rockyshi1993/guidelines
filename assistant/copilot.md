@@ -36,7 +36,7 @@ THEN 执行:
   3. 🔴 [强制] 更新 CHANGELOG.md [Unreleased] → 读取 guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款
   4. 🟠 [必须] 更新 README.md (如果API变更) → 读取 guidelines/guidelines/v2.md#6-代码修改与文档联动
   5. 🟡 [推荐] 更新类型声明文件 (如 index.d.ts)
-  
+
 BEFORE 提交:
   - 运行: npm test (或项目定义的测试命令)
   - 验证: examples/ 中的示例可独立运行
@@ -52,11 +52,11 @@ BEFORE 提交:
 IF: 用户描述问题或错误
 THEN 执行:
   1. � [强制] 引导用户填写 Bug 分析模板
-     → 读取 guidelines/templates/bug-fix-analysis-template.md
+  → 读取 guidelines/templates/bug-fix-analysis-template.md
   2. 🔴 [强制] 记录到: <项目>/bug-analysis/YYYY-MM-DD-问题描述.md
   3. 🟠 [必须] 添加回归测试用例
   4. 🟠 [必须] 更新 CHANGELOG.md (类型: Fixed)
-  
+
 模板必填项:
   - 根本原因 (Why)
   - 影响对比 (修复前后)
@@ -73,11 +73,11 @@ THEN 执行:
 IF: 编辑行数 > 100 OR 删除整个章节/附录
 THEN 执行:
   1. 🔴 [强制] 使用 PowerShell 脚本而非 replace_string_in_file
-     → 读取 guidelines/guidelines/v2.md#20-大规模文件编辑策略ai-辅助开发
+  → 读取 guidelines/guidelines/v2.md#20-大规模文件编辑策略ai-辅助开发
   2. 🔴 [强制] 先备份文件: Copy-Item file.md file.md.backup
   3. 🟠 [必须] 使用 UTF-8 无BOM 编码
   4. 🟡 [推荐] 分步验证结果
-  
+
 禁止操作:
   - ❌ 使用 multi_edit 工具删除 >100行
   - ❌ 未备份时执行修改
@@ -93,12 +93,12 @@ THEN 执行:
 IF: 审查包含日志输出/错误处理/API调用
 THEN 检查:
   1. 🔴 [强制] 日志中无敏感信息 (密码/token/连接串)
-     → 读取 guidelines/guidelines/v2.md#10-日志分级与敏感信息清洗含可观测性增强
+  → 读取 guidelines/guidelines/v2.md#10-日志分级与敏感信息清洗含可观测性增强
   2. 🔴 [强制] 输入校验完整 (类型/必填/范围)
-     → 读取 guidelines/guidelines/v2.md#9-错误处理与输入校验
+  → 读取 guidelines/guidelines/v2.md#9-错误处理与输入校验
   3. 🟠 [必须] 错误信息可行动且去敏
   4. 🟡 [推荐] 使用查询形状而非具体值
-  
+
 敏感信息正则:
   - API Keys: /(sk|pk|api|token)[-_]?[a-zA-Z0-9]{20,}/
   - 密码: /password|passwd|pwd|secret|credential/i
@@ -130,6 +130,65 @@ IF 仅内部重构/性能优化 (不改API):
 
 ---
 
+### 场景 F: 主动改进/优化分析
+**触发条件**: 项目改进、性能优化、架构重构、技术债务分析
+**推荐执行**:
+```yaml
+IF: 主动性改进/优化（非Bug响应）
+THEN 执行:
+  1. 🟡 [推荐] 创建分析报告: <项目>/analysis-reports/YYYY-MM-DD-主题.md
+     → 读取 guidelines/guidelines/v2.md#191-分析报告目录规范
+  2. 🟡 [推荐] 填写分析内容:
+     - 背景与动机
+     - 方案分析
+     - 实施步骤
+     - 验证方法
+     - 结果总结
+  3. 🟠 [必须] 实施改进后更新 CHANGELOG.md
+  4. 🟡 [推荐] 保留报告（永久保留，便于追溯）
+
+适用场景:
+  - P0/P1/P2 优先级改进
+  - 性能优化分析
+  - 架构重构评估
+  - 技术债务分析
+  - 依赖升级影响分析
+```
+
+---
+
+### 场景 G: 验证流程执行
+**触发条件**: 代码修改完成，需要执行完整验证
+**强制执行**:
+```yaml
+IF: 代码修改完成
+THEN 按优先级执行验证:
+
+开发阶段（本地）:
+  🔴 [强制]:
+    - 单元测试: npm test
+    - 示例运行: node examples/<功能>.examples.js
+    - 文档一致性: 检查 README/CHANGELOG/类型声明
+  🟠 [必须]:
+    - 覆盖率检查: npm run coverage (≥60%)
+    - 代码风格: npm run lint
+    - 敏感信息: 检查日志/注释/示例
+
+提交阶段（Pre-commit）:
+  🔴 [强制]:
+    - 所有测试通过
+    - 文档完整性（CHANGELOG更新、README同步）
+    - 无敏感信息泄露
+  🟠 [必须]:
+    - Lint 检查通过
+    - 提交信息符合 Conventional Commits
+
+详细验证流程:
+  → 读取 guidelines/guidelines/v2.md#21-验证与测试策略完整流程
+```
+
+---
+
 ## 📊 优先级决策树（快速查询）
 
 ### 决策流程
@@ -138,17 +197,22 @@ IF 仅内部重构/性能优化 (不改API):
     ↓
 ┌─────────────────────────────────────────────────────────┐
 │ 新增/修改功能？                                          │
-│  → 测试🔴 + 示例🔴 + CHANGELOG🔴 + README🟠 + 验证🟠    │
+│  → 测试🔴 + 示例🔴 + CHANGELOG🔴 + README🟠 + 验证🔴    │
 └─────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────┐
 │ Bug修复？                                               │
-│  → Bug模板🔴 + 测试🟠 + CHANGELOG🔴 + 验证🟠          │
+│  → Bug模板🔴 + bug-analysis/🔴 + 测试🟠 + 验证🟠     │
+└─────────────────────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────────────────────┐
+│ 主动改进/优化？                                         │
+│  → analysis-reports/🟡 + 测试🟠 + CHANGELOG🔴 + 验证🟠│
 └─────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────┐
 │ 性能优化？                                              │
-│  → 测试🟠 + CHANGELOG🔴 + 验证🔴 (前后对比)           │
+│  → 测试🟠 + CHANGELOG🔴 + 性能测试🔴 + 验证🔴         │
 └─────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -159,6 +223,11 @@ IF 仅内部重构/性能优化 (不改API):
 ┌─────────────────────────────────────────────────────────┐
 │ 文档修改？                                              │
 │  → README🟠 + CHANGELOG🟡                             │
+└─────────────────────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────────────────────┐
+│ 代码修改完成？                                          │
+│  → 执行完整验证流程🔴 (参见场景G)                      │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -212,6 +281,12 @@ IF 仅内部重构/性能优化 (不改API):
     - 正常路径 (主要场景)
     - 异常路径 (非法输入/边界)
     - 边界用例 (空值/最小最大/并发/超时)
+    
+    测试目录结构:
+    - test/unit/features/        # 功能性测试（业务功能）
+    - test/unit/infrastructure/  # 基础设施测试（logger/errors/connection）
+    - test/unit/utils/           # 工具函数测试（纯函数）
+    
 [ ] 🔴 添加示例到 examples/<功能>.examples.js
     - 可独立运行
     - 详细注释 (功能/参数/返回值/预期行为)
@@ -257,10 +332,14 @@ IF 仅内部重构/性能优化 (不改API):
 |-------|----------|------------|
 | **新增功能** | 场景A | [第3.1章](../guidelines/guidelines/v2.md#31-功能添加完整流程四要素代码-测试-示例-文档) |
 | **修改API** | 场景A + E | [第6章](../guidelines/guidelines/v2.md#6-代码修改与文档联动) |
-| **Bug修复** | 场景B | [Bug模板](../guidelines/templates/bug-fix-analysis-template.md) |
+| **Bug修复** | 场景B | [Bug模板](../guidelines/templates/bug-fix-analysis-template.md) + [第19.1章](../guidelines/guidelines/v2.md#191-分析报告目录规范) |
+| **主动改进** | 场景F | [第19.1章](../guidelines/guidelines/v2.md#191-分析报告目录规范) |
+| **验证流程** | 场景G | [第21章](../guidelines/guidelines/v2.md#21-验证与测试策略完整流程) |
+| **验证脚本** | - | [第22章](../guidelines/guidelines/v2.md#22-验证脚本与工具目录规范) |
+| **CHANGELOG管理** | - | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
 | **大规模编辑** | 场景C | [第20章](../guidelines/guidelines/v2.md#20-大规模文件编辑策略ai-辅助开发) |
 | **代码审查** | 场景D | [第9章](../guidelines/guidelines/v2.md#9-错误处理与输入校验) + [第10章](../guidelines/guidelines/v2.md#10-日志分级与敏感信息清洗含可观测性增强) |
-| **测试** | 阶段3 | [第7章](../guidelines/guidelines/v2.md#7-测试与质量) |
+| **测试** | 阶段3 + 场景G | [第7章](../guidelines/guidelines/v2.md#7-测试与质量) + [第21章](../guidelines/guidelines/v2.md#21-验证与测试策略完整流程) |
 | **文档** | 阶段4 | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
 | **API弃用** | 场景E | [第13章](../guidelines/guidelines/v2.md#13-api-稳定性与弃用deprecation) |
 | **提交信息** | 阶段5 | [第3章](../guidelines/guidelines/v2.md#3-提交与-pr-规范) |
@@ -268,12 +347,16 @@ IF 仅内部重构/性能优化 (不改API):
 ### 按文件操作查询
 | 文件类型 | 何时必须更新 | 优先级 | 参考章节 |
 |---------|------------|-------|---------|
-| **test/*.test.js** | 新增/修改功能、Bug修复 | 🔴 强制 | [第7章](../guidelines/guidelines/v2.md#7-测试与质量) |
+| **test/*.test.js** | 新增/修改功能、Bug修复 | 🔴 强制 | [第7章](../guidelines/guidelines/v2.md#7-测试与质量) + [第21章](../guidelines/guidelines/v2.md#21-验证与测试策略完整流程) |
 | **examples/*.examples.js** | 新增/修改功能 | 🔴 强制 | [第18章](../guidelines/guidelines/v2.md#18-功能示例目录examples) |
+| **scripts/verify/**/*.js** | 改进完成后验证 | 🟡 推荐 | [第22章](../guidelines/guidelines/v2.md#22-验证脚本与工具目录规范) |
 | **CHANGELOG.md** | 所有对外可见变更 | 🔴 强制 | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
+| **changelogs/**/*.md** | CHANGELOG归档（>500行） | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
 | **README.md** | API变更、默认值变更 | 🟠 必须 | [第6章](../guidelines/guidelines/v2.md#6-代码修改与文档联动) |
 | **STATUS.md** | 功能状态变化 | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
 | **index.d.ts** | TypeScript项目API变更 | 🟡 推荐 | [第12章](../guidelines/guidelines/v2.md#12-目录导出与-typescript-声明) |
+| **analysis-reports/*.md** | 主动性改进分析 | 🟡 推荐 | [第19.1章](../guidelines/guidelines/v2.md#191-分析报告目录规范) |
+| **bug-analysis/*.md** | Bug修复分析 | 🔴 强制 | [第19.1章](../guidelines/guidelines/v2.md#191-分析报告目录规范) |
 
 ---
 
@@ -316,20 +399,20 @@ IF 仅内部重构/性能优化 (不改API):
 2. 读取Profile: guidelines/profiles/monSQLize.md
 3. 读取规范: guidelines/guidelines/v2.md#31
 4. 执行任务:
-   [代码] 创建 lib/mongodb/find-page.js
-   [测试] 创建 test/findPage.test.js
-          - ✅ 正常分页测试
-          - ✅ 边界条件测试（limit=0, limit=1000）
-          - ✅ 空结果测试
-   [示例] 创建 examples/findPage.examples.js
-          - ✅ 可独立运行
-          - ✅ 详细注释
-   [文档] 更新 CHANGELOG.md [Unreleased]
-          更新 README.md API说明
+  [代码] 创建 lib/mongodb/find-page.js
+    [测试] 创建 test/findPage.test.js
+    - ✅ 正常分页测试
+    - ✅ 边界条件测试（limit=0, limit=1000）
+    - ✅ 空结果测试
+    [示例] 创建 examples/findPage.examples.js
+    - ✅ 可独立运行
+    - ✅ 详细注释
+    [文档] 更新 CHANGELOG.md [Unreleased]
+    更新 README.md API说明
 5. 验证:
-   - ✅ npm test 全部通过
-   - ✅ node examples/findPage.examples.js 运行成功
-   - ✅ 无敏感信息泄露
+  - ✅ npm test 全部通过
+  - ✅ node examples/findPage.examples.js 运行成功
+  - ✅ 无敏感信息泄露
 6. 提交: PR包含完整四要素
 ```
 
@@ -345,9 +428,9 @@ IF 仅内部重构/性能优化 (不改API):
 ```yaml
 1. 识别场景: 场景B - Bug修复
 2. 引导填写: Bug分析模板
-   - 根本原因: 连接未正确释放
-   - 影响对比: 并发>50时连接池耗尽 vs 正常释放
-   - 修复方案: 添加 finally 块确保释放
+               - 根本原因: 连接未正确释放
+               - 影响对比: 并发>50时连接池耗尽 vs 正常释放
+               - 修复方案: 添加 finally 块确保释放
 3. 记录分析: monSQLize/bug-analysis/2025-10-30-connection-leak.md
 4. 实施修复: 修改 lib/connect.js
 5. 添加测试: test/connection.test.js (并发测试)
@@ -369,14 +452,14 @@ IF 仅内部重构/性能优化 (不改API):
 2. 检查条件: README.md = 841行 > 100行 ✅
 3. 读取规范: guidelines/guidelines/v2.md#20
 4. 执行策略:
-   [备份] Copy-Item README.md README.md.backup
-   [脚本] 使用PowerShell精确删除附录
-   [编码] UTF-8无BOM
-   [验证] 每步后read_file检查
+  [备份] Copy-Item README.md README.md.backup
+    [脚本] 使用PowerShell精确删除附录
+    [编码] UTF-8无BOM
+    [验证] 每步后read_file检查
 5. 结果:
-   - 原始: 35KB
-   - 优化: 5KB
-   - 节省: 86% ✅
+  - 原始: 35KB
+  - 优化: 5KB
+  - 节省: 86% ✅
 6. 清理: Remove-Item README.md.backup
 ```
 
@@ -391,21 +474,21 @@ IF 仅内部重构/性能优化 (不改API):
 **AI执行流程**:
 ```yaml
 1. 识别场景: 场景D - 代码审查/安全检查
-2. 读取规范: 
-   - guidelines/guidelines/v2.md#9 (输入校验)
-   - guidelines/guidelines/v2.md#10 (日志安全)
+2. 读取规范:
+  - guidelines/guidelines/v2.md#9 (输入校验)
+  - guidelines/guidelines/v2.md#10 (日志安全)
 3. 检查项目:
-   [日志安全]
-   - ❌ 发现: logger.info(`连接: ${connectionString}`)
-   - ✅ 修复: logger.info(`连接: ${maskUri(connectionString)}`)
-   
-   [输入校验]
-   - ❌ 发现: 缺少类型检查
-   - ✅ 修复: 添加 Joi schema
-   
-   [错误处理]
-   - ✅ 已有可行动错误信息
-   - ✅ 已保留原始错误cause
+  [日志安全]
+  - ❌ 发现: logger.info(`连接: ${connectionString}`)
+  - ✅ 修复: logger.info(`连接: ${maskUri(connectionString)}`)
+
+  [输入校验]
+  - ❌ 发现: 缺少类型检查
+  - ✅ 修复: 添加 Joi schema
+
+  [错误处理]
+  - ✅ 已有可行动错误信息
+  - ✅ 已保留原始错误cause
 4. 输出报告: 不符合项清单 + 修复建议
 ```
 
@@ -420,14 +503,14 @@ IF 仅内部重构/性能优化 (不改API):
 ```yaml
 1. 检查测试用例是否覆盖新增代码路径
 2. 运行单个测试: npm test -- <test-file>
-3. 检查错误日志是否包含敏感信息
+  3. 检查错误日志是否包含敏感信息
 4. 回滚代码: git checkout -- <file>
 ```
 
 ### 如果文档不一致
 ```yaml
 1. 对比 README 与代码实际行为
-2. 检查 CHANGELOG [Unreleased] 是否有条目
+  2. 检查 CHANGELOG [Unreleased] 是否有条目
 3. 运行示例验证: node examples/<file>
 4. 更新类型声明: index.d.ts
 ```
