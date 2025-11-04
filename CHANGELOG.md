@@ -6,49 +6,35 @@
 
 ## [Unreleased]
 
-### ✨ Added（新增）
+### 🔄 Changed（修改 - 重要）
 
-#### 1. 第19.1章和第22章补充：Git 管理策略
+#### 1. 第19.1章调整：analysis-reports/ 和 bug-analysis/ 不要提交到 Git
 
-**位置**: 
-- `guidelines/guidelines/v2.md` 第19.1章"分析报告目录规范"
-- `guidelines/guidelines/v2.md` 第22章"验证脚本与工具目录规范"
+**调整原因**: 
+- 用户反馈：文件太多（每天几十个），会导致仓库膨胀
+- 实际情况：大多数团队很少查阅历史分析
 
-**问题**: 
-- bug-analysis/、analysis-reports/ 等目录是否应该提交到 Git？
-- 缺乏明确的 Git 管理策略指导
-
-**解决方案**: 
-补充详细的 Git 管理策略，明确哪些目录应该提交，哪些不应该提交
-
-**核心内容**:
-
-**应该提交到 Git** (✅):
+**调整后**:
 ```yaml
-目录:
-  - bug-analysis/          # Bug 修复分析（永久保留）
-  - analysis-reports/      # 主动改进分析（永久保留）
-  - scripts/               # 验证脚本和工具（项目基础设施）
+不要提交到 Git (❌):
+  - analysis-reports/      # 分析报告
+  - bug-analysis/          # Bug 分析
 
 理由:
-  1. 知识沉淀: 团队共享的宝贵知识
-  2. 历史追溯: 记录项目演进过程
-  3. 技术决策: 记录方案评估和选择理由
-  4. 经验传承: 新成员快速了解历史
-  5. 代码关联: 与代码变更形成完整历史
+  ❌ 文件数量多，每天可能几十个
+  ❌ Git 仓库持续膨胀
+  
+建议:
+  ✅ 保留在本地（开发者自行决定）
+  ✅ 使用外部文档系统（Wiki/飞书/Notion）
+  ✅ 重要内容放入 docs/ 目录
 ```
 
-**不应该提交到 Git** (❌):
-```yaml
-目录/文件:
-  - logs/                  # 运行日志
-  - coverage/              # 覆盖率报告
-  - verify-results.json    # 验证结果
-  - test-results/          # 测试结果
-  - tmp/                   # 临时文件
+**影响**:
+- .gitignore 配置已更新
+- templates/.gitignore-template 已更新
 
-理由:
-  - 自动生成，可重新生成
+### ✨ Added（新增）
   - 频繁变动，无版本意义
   - 文件可能很大
 ```
