@@ -2,7 +2,7 @@
 # 标准 .gitignore 模板
 # ====================
 # 用于 Node.js 项目的标准配置
-# 参考规范：guidelines/guidelines/v2.md 第19.1章和第22章
+# 参考规范：guidelines/guidelines/v2.md 第19.1章
 
 # ====================
 # 运行时生成文件（不提交）
@@ -13,18 +13,7 @@ logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
-
-# 诊断报告
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
-# 运行时数据
-pids/
-*.pid
-*.seed
-*.pid.lock
 
 # 测试覆盖率
 coverage/
@@ -36,101 +25,42 @@ tmp/
 temp/
 .cache/
 *.tmp
-*.swp
-*.swo
 
 # 依赖目录
 node_modules/
-jspm_packages/
 
-# TypeScript 缓存
-*.tsbuildinfo
-
-# 可选的npm缓存目录
-.npm
-
-# 可选的eslint缓存
-.eslintcache
-
-# 构建产物（根据项目需要调整）
+# 构建产物
 dist/
 build/
-*.build.log
 
 # 环境配置（包含敏感信息）
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
 .env.*.local
 
-# 验证结果（scripts/verify/ 执行产生）
-verify-results.json
-verify-*.log
-*-verify-report.json
+# ====================
+# 分析报告（不提交）⭐
+# ====================
 
-# 测试结果
-test-results/
-test-output/
-*.test-results.xml
-
-# 部署日志
-deploy-logs/
-*.deploy.log
-
-# IDE和编辑器
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-.DS_Store
-Thumbs.db
+# 这些目录文件数量多，会导致仓库膨胀
+analysis-reports/
+bug-analysis/
 
 # ====================
 # 应该提交的目录（不要忽略）
 # ====================
 
-# 文档和分析报告（人工编写，有长期价值）
-# docs/              ← 不要忽略
-# bug-analysis/      ← 不要忽略
-# analysis-reports/  ← 不要忽略
-
-# 脚本和工具（项目基础设施）
-# scripts/           ← 不要忽略
-
-# 示例和测试（代码的一部分）
-# examples/          ← 不要忽略
-# test/              ← 不要忽略
-
-# 配置文件（项目配置，不含敏感信息）
-# .editorconfig      ← 不要忽略
-# .gitattributes     ← 不要忽略
-# .eslintrc.js       ← 不要忽略
-# .prettierrc        ← 不要忽略
+# docs/         ← 不要忽略（项目文档）
+# scripts/      ← 不要忽略（脚本工具）
+# test/         ← 不要忽略（测试代码）
+# examples/     ← 不要忽略（示例代码）
 
 # ====================
-# 特殊说明
+# IDE 和编辑器
 # ====================
 
-# 1. package-lock.json / yarn.lock
-#    - 库项目：可以忽略（让使用者决定版本）
-#    - 应用项目：应该提交（锁定依赖版本）
-#    根据项目类型决定是否添加到 .gitignore
-
-# 2. 敏感信息
-#    - 确保 .env 文件在 .gitignore 中
-#    - 提供 .env.example 模板（不含真实数据）
-#    - 分析报告中使用占位符或脱敏数据
-
-# 3. 大文件
-#    - 避免提交大于 1MB 的文件
-#    - 图片和二进制文件考虑使用 Git LFS
-#    - 或使用外部链接
-
-# ====================
-# 项目特定配置（根据需要添加）
-# ====================
-
-# 添加项目特定的忽略规则...
+.vscode/
+.idea/
+*.swp
+.DS_Store
 
