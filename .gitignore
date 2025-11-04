@@ -1,0 +1,71 @@
+# ====================
+# 分析报告（不提交）
+# ====================
+# 这些目录文件数量多，会导致仓库膨胀
+# 参考规范：guidelines/v2.md 第19.1章
+
+analysis-reports/
+bug-analysis/
+
+# ====================
+# 运行时生成文件（不提交）
+# ====================
+
+# 日志
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# 测试覆盖率
+coverage/
+*.lcov
+.nyc_output/
+
+# 临时文件
+tmp/
+temp/
+.cache/
+*.tmp
+*.swp
+*.swo
+
+# 依赖目录
+node_modules/
+
+# 构建产物
+dist/
+build/
+
+# 环境配置（包含敏感信息）
+.env
+.env.local
+.env.*.local
+
+# 验证结果
+verify-results.json
+verify-*.log
+test-results/
+
+# ====================
+# IDE 和编辑器
+# ====================
+
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# ====================
+# 应该提交的目录（不要忽略）
+# ====================
+
+# docs/         ← 不要忽略（项目文档）
+# scripts/      ← 不要忽略（脚本工具）
+# examples/     ← 不要忽略（示例代码）
+# guidelines/   ← 不要忽略（规范文档）
+# templates/    ← 不要忽略（模板文件）
+
