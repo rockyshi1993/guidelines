@@ -130,39 +130,129 @@ async findOne(options) {
 
 ---
 
+## MongoDB 连接模式（项目特定，⚠️ 重要）
+
+### 测试环境连接（自动 Memory Server）
+
+**✅ 推荐方式**（项目约定）：
+```javascript
+msq = new MonSQLize({
+    type: 'mongodb',
+    databaseName: 'test_myfeature',
+    config: { useMemoryServer: true }  // ← 自动启动 MongoDB Memory Server
+});
+```
+
+**特点**：
+- ✅ 自动管理 MongoDB Memory Server 生命周期
+- ✅ 无需手动创建和清理
+- ✅ 支持多个测试并发运行（自动端口分配）
+- ✅ 自动在测试结束时清理
+
+**❌ 不推荐方式**（手动管理，容易出错）：
+```javascript
+// ❌ 避免这样做
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoServer = await MongoMemoryServer.create();
+const uri = mongoServer.getUri();
+
+msq = new MonSQLize({
+    type: 'mongodb',
+    databaseName: 'test',
+    config: { uri }
+});
+
+// 需要手动清理
+await mongoServer.stop();
+```
+
+### 访问原生 MongoDB 实例
+
+在测试中需要直接操作 MongoDB（如插入测试数据）时：
+
+```javascript
+// 通过 _adapter.db 访问原生 MongoDB 数据库实例
+const db = msq._adapter.db;
+const nativeCollection = db.collection('products');
+
+// 直接操作 MongoDB
+await nativeCollection.insertMany([
+    { name: 'Product 1', price: 100 },
+    { name: 'Product 2', price: 200 }
+]);
+```
+
+**注意**：
+- ✅ `msq._adapter.db` - 返回原生 MongoDB Db 实例
+- ❌ `msq.db` - 不存在
+- ❌ `msq.collection()` - 返回封装后的 MonSQLize 集合访问器（非原生）
+
+### 生产/开发环境连接
+
+```javascript
+const msq = new MonSQLize({
+    type: 'mongodb',
+    databaseName: 'production',
+    config: { 
+        uri: process.env.MONGO_URI || 'mongodb://localhost:27017'
+    }
+});
+```
+
+---
+
 ## 测试模板（遵循例外风格）
 
 ```javascript
-// test/findOne.test.js
+// test/unit/features/findOne.test.js
 const assert = require('assert');
-const MonSQLize = require('../lib/index');
+const MonSQLize = require('../../../lib/index');
 
 describe('findOne 方法测试套件', function() {
     this.timeout(30000);
     
-    let msq, collection;
+    let msq, collection, nativeCollection;
 
     before(async () => {
+        // ✅ 使用 useMemoryServer 自动管理测试数据库
         msq = new MonSQLize({
             type: 'mongodb',
-            databaseName: 'test',
-            config: { uri: process.env.MONGO_URI || 'mongodb://localhost:27017' }
+            databaseName: 'test_findone',
+            config: { useMemoryServer: true }
         });
+        
         const conn = await msq.connect();
         collection = conn.collection;
+        
+        // ✅ 获取原生 MongoDB 集合（用于测试数据准备）
+        const db = msq._adapter.db;
+        nativeCollection = db.collection('users');
+        
+        // 准备测试数据
+        await nativeCollection.deleteMany({});
+        await nativeCollection.insertMany([
+            { name: 'Alice', age: 25 },
+            { name: 'Bob', age: 30 }
+        ]);
     });
 
     after(async () => {
-        // 清理
+        // 清理（可选，useMemoryServer 会自动清理）
+        if (msq) await msq.close();
     });
 
     it('应该返回匹配的文档', async () => {
-        const doc = await collection('users').findOne({ query: { name: 'test' } });
+        const doc = await collection('users').findOne({ 
+            query: { name: 'Alice' } 
+        });
         assert.ok(doc);
+        assert.strictEqual(doc.name, 'Alice');
     });
 
     it('应该在无匹配时返回 null', async () => {
-        const doc = await collection('users').findOne({ query: { name: 'nonexistent' } });
+        const doc = await collection('users').findOne({ 
+            query: { name: 'nonexistent' } 
+        });
         assert.strictEqual(doc, null);
     });
 });
@@ -262,8 +352,10 @@ const cacheKey = `${iid}:${db}:${coll}:${op}:${queryShapeHash}`;
 ### 测试框架检查
 - [ ] 使用自定义测试运行器（兼容 Mocha API）
 - [ ] 使用 assert 断言库
-- [ ] 测试初始化包含 MonSQLize 实例创建
-- [ ] 使用 `conn.collection` 获取集合访问器
+- [ ] **测试使用 `useMemoryServer: true` 自动管理 MongoDB**
+- [ ] **使用 `msq._adapter.db` 访问原生 MongoDB（不是 msq.db）**
+- [ ] 使用 `conn.collection` 获取 MonSQLize 集合访问器
+- [ ] 使用 `describe(function() { this.timeout(30000); })` 设置超时
 
 ### 示例代码检查
 - [ ] 示例使用 CommonJS require
@@ -276,4 +368,4 @@ const cacheKey = `${iid}:${db}:${coll}:${op}:${queryShapeHash}`;
 
 ---
 
-**最后更新**: 2025-10-12
+**最后更新**: 2025-11-06
