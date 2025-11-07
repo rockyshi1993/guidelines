@@ -222,7 +222,7 @@ describe('findOne 方法测试套件', function() {
         });
         
         const conn = await msq.connect();
-        collection = conn.collection;
+        collection = conn.collection;  // ← collection 是集合访问器函数
         
         // ✅ 获取原生 MongoDB 集合（用于测试数据准备）
         const db = msq._adapter.db;
@@ -242,6 +242,7 @@ describe('findOne 方法测试套件', function() {
     });
 
     it('应该返回匹配的文档', async () => {
+        // ✅ 正确：使用 collection('集合名').方法名()
         const doc = await collection('users').findOne({ 
             query: { name: 'Alice' } 
         });
@@ -250,12 +251,23 @@ describe('findOne 方法测试套件', function() {
     });
 
     it('应该在无匹配时返回 null', async () => {
+        // ✅ 正确：使用 collection('集合名').方法名()
         const doc = await collection('users').findOne({ 
             query: { name: 'nonexistent' } 
         });
         assert.strictEqual(doc, null);
     });
 });
+```
+
+**⚠️ 常见错误**:
+```javascript
+// ❌ 错误：直接调用 collection.findOne()
+const doc = await collection.findOne({ query: { name: 'Alice' } });
+// 报错: collection.findOne is not a function
+
+// ✅ 正确：collection 是函数，需要传入集合名
+const doc = await collection('users').findOne({ query: { name: 'Alice' } });
 ```
 
 ---
@@ -354,8 +366,10 @@ const cacheKey = `${iid}:${db}:${coll}:${op}:${queryShapeHash}`;
 - [ ] 使用 assert 断言库
 - [ ] **测试使用 `useMemoryServer: true` 自动管理 MongoDB**
 - [ ] **使用 `msq._adapter.db` 访问原生 MongoDB（不是 msq.db）**
-- [ ] 使用 `conn.collection` 获取 MonSQLize 集合访问器
+- [ ] **使用 `conn.collection` 获取集合访问器函数**
+- [ ] **调用方法时使用 `collection('集合名').方法名()` 模式（不是 `collection.方法名()`）**
 - [ ] 使用 `describe(function() { this.timeout(30000); })` 设置超时
+- [ ] 监听事件使用 `msq._emitter.on()` 而不是 `msq.on()`
 
 ### 示例代码检查
 - [ ] 示例使用 CommonJS require
