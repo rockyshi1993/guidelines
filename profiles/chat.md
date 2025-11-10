@@ -106,6 +106,117 @@ bug-analysis/           # Bug 分析报告
 - 认证: 通过 MCP 配置管理（不在代码中硬编码）
 - 连接方式: `directConnection=true`
 
+**主要集合**:
+- `trips` - 行程数据（核心集合）
+  - 字段：trip_name, owner_id, status, start_date, end_date, traveler_count, created_at, updated_at
+  - 用途：行程 CRUD、分享、协同编辑
+- `users` - 用户数据
+  - 字段：username, email, avatar, privilege, created_at, last_login_at
+  - 用途：用户管理、权限验证、登录记录
+- `messages` - 消息记录
+  - 字段：trip_id, user_id, content, type, created_at
+  - 用途：行程消息、系统通知
+- `ai_conversations` - AI 对话历史
+  - 字段：user_id, trip_id, role, content, model, created_at
+  - 用途：AI 对话记录、行程生成历史
+- `share_logs` - 分享记录
+  - 字段：trip_id, share_type, share_link, views, created_at
+  - 用途：分享统计、访问分析
+- `edit_sessions` - 协同编辑会话
+  - 字段：trip_id, user_ids, status, last_active_at
+  - 用途：协同编辑状态跟踪
+
+**敏感字段**（禁止在查询结果中返回）:
+- `password_hash` - 用户密码哈希
+- `password` - 任何密码字段
+- `access_token` - 访问令牌
+- `refresh_token` - 刷新令牌
+- `api_key` - API 密钥
+- `secret` - 任何密钥字段
+- `private_data` - 私有数据字段
+
+**常见查询场景**:
+
+1. **用户反馈 Bug - 需要查看实际数据**
+   ```yaml
+   用户: "用户说行程创建失败"
+   AI 执行:
+     1. 查询最近失败的行程创建记录
+        db.trips.find({ 
+          status: 'failed',
+          created_at: { $gte: new Date(Date.now() - 24*3600*1000) }
+        }).sort({ created_at: -1 }).limit(10)
+     2. 检查错误日志集合（如果有）
+     3. 分析失败原因（字段缺失、数据格式、权限等）
+     4. 提供修复建议
+   ```
+
+2. **数据统计分析**
+   ```yaml
+   用户: "最近一周有多少新用户？"
+   AI 执行:
+     1. 连接 mongodb-chat
+     2. 查询 users 集合
+        db.users.count({ 
+          created_at: { 
+            $gte: new Date(Date.now() - 7*24*3600*1000) 
+          } 
+        })
+     3. 统计数量并分析趋势
+     4. 可选：按日期分组统计
+        db.users.aggregate([
+          { $match: { created_at: { $gte: ... } } },
+          { $group: { 
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$created_at" } },
+            count: { $sum: 1 }
+          }},
+          { $sort: { _id: 1 } }
+        ])
+   ```
+
+3. **数据结构探索**
+   ```yaml
+   用户: "trips 集合有哪些字段？"
+   AI 执行:
+     1. 使用 collection-schema 工具
+        mcp_mongodb-chat_collection-schema(database: "trip", collection: "trips")
+     2. 整理字段列表和类型
+     3. 标注必填/可选/索引字段
+     4. 提供字段用途说明（参考上方"主要集合"）
+   ```
+
+4. **用户行为分析**
+   ```yaml
+   用户: "哪些用户最活跃？"
+   AI 执行:
+     1. 查询行程数量最多的用户
+        db.trips.aggregate([
+          { $group: { _id: "$owner_id", trip_count: { $sum: 1 } } },
+          { $sort: { trip_count: -1 } },
+          { $limit: 10 }
+        ])
+     2. 关联用户信息（使用 $lookup 或分别查询）
+     3. 整理为易读的排行榜
+   ```
+
+5. **问题排查 - 数据验证**
+   ```yaml
+   用户: "为什么有些行程没有显示开始日期？"
+   AI 执行:
+     1. 查询缺失 start_date 的行程
+        db.trips.find({ 
+          $or: [
+            { start_date: { $exists: false } },
+            { start_date: null },
+            { start_date: "" }
+          ]
+        }).limit(10)
+     2. 统计数量
+        db.trips.count({ start_date: { $exists: false } })
+     3. 分析原因（数据迁移遗留、创建逻辑缺陷等）
+     4. 提供数据修复建议
+   ```
+
 **说明**: AI 助手在调用任何 MCP 数据库操作前，必须先读取本配置。未在此处声明的 MCP 服务器一律禁止调用。
 
 ---

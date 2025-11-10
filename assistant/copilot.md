@@ -14,11 +14,57 @@
     ↓
 [2] 读取项目 Profile (guidelines/profiles/<project>.md)
     ↓
+[2.1] 🔴 检查 MCP 配置 (如涉及数据库操作)
+    ↓
 [3] 检查强制规则 (优先级 🔴)
     ↓
 [4] 执行任务 (遵循检查清单)
     ↓
 [5] 自检验证 (运行测试/检查文档)
+```
+
+### 🔴 MCP 配置强制检查（数据库操作前必读）
+
+**触发条件**: 任何涉及数据库查询、分析、操作的任务
+
+**强制执行流程**:
+```yaml
+IF: 用户请求涉及 MongoDB/PostgreSQL/MySQL 等数据库操作
+THEN 必须执行:
+  1. 🔴 读取 guidelines/profiles/<project>.md
+  2. 🔴 检查是否有 "MCP 配置" 章节
+  3. 🔴 确认允许的 MCP 服务器名称
+  4. 🔴 仅调用 Profile 中声明的 MCP 服务器
+  5. ❌ 未声明则禁止调用任何 MCP 服务器
+
+禁止行为:
+  - ❌ 未读取 Profile 就调用 MCP
+  - ❌ 调用未在 Profile 中声明的 MCP 服务器
+  - ❌ 跨项目使用错误的数据库连接
+
+理由: 防止连接到错误的数据库，避免数据污染和安全风险
+```
+
+**示例**（正确流程）:
+```yaml
+用户: "查询 monSQLize 项目的 users 集合"
+
+AI 执行:
+  1. ✅ 识别为数据库查询任务
+  2. ✅ 读取 guidelines/profiles/monSQLize.md
+  3. ✅ 检查 MCP 配置章节
+  4. ✅ 确认允许使用 "mongodb-monsqlize"
+  5. ✅ 调用 mongodb-monsqlize MCP 服务器
+  6. ✅ 返回查询结果
+
+用户: "查询 chatAI 项目的消息数据"
+
+AI 执行:
+  1. ✅ 识别为数据库查询任务
+  2. ✅ 读取 guidelines/profiles/chatAI.md
+  3. ❌ 未找到 MCP 配置章节
+  4. ❌ 拒绝调用任何 MCP 服务器
+  5. ✅ 提示用户: "该项目未配置 MCP 服务器，无法执行数据库操作"
 ```
 
 ---
@@ -36,7 +82,7 @@ THEN 执行:
   3. 🔴 [强制] 更新 CHANGELOG.md [Unreleased] → 读取 guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款
   4. 🟠 [必须] 更新 README.md (如果API变更) → 读取 guidelines/guidelines/v2.md#6-代码修改与文档联动
   5. 🟡 [推荐] 更新类型声明文件 (如 index.d.ts)
-
+  
 BEFORE 提交:
   - 运行: npm test (或项目定义的测试命令)
   - 验证: examples/ 中的示例可独立运行
@@ -52,11 +98,11 @@ BEFORE 提交:
 IF: 用户描述问题或错误
 THEN 执行:
   1. � [强制] 引导用户填写 Bug 分析模板
-  → 读取 guidelines/templates/bug-fix-analysis-template.md
+     → 读取 guidelines/templates/bug-fix-analysis-template.md
   2. 🔴 [强制] 记录到: <项目>/bug-analysis/YYYY-MM-DD-问题描述.md
   3. 🟠 [必须] 添加回归测试用例
   4. 🟠 [必须] 更新 CHANGELOG.md (类型: Fixed)
-
+  
 模板必填项:
   - 根本原因 (Why)
   - 影响对比 (修复前后)
@@ -73,11 +119,11 @@ THEN 执行:
 IF: 编辑行数 > 100 OR 删除整个章节/附录
 THEN 执行:
   1. 🔴 [强制] 使用 PowerShell 脚本而非 replace_string_in_file
-  → 读取 guidelines/guidelines/v2.md#20-大规模文件编辑策略ai-辅助开发
+     → 读取 guidelines/guidelines/v2.md#20-大规模文件编辑策略ai-辅助开发
   2. 🔴 [强制] 先备份文件: Copy-Item file.md file.md.backup
   3. 🟠 [必须] 使用 UTF-8 无BOM 编码
   4. 🟡 [推荐] 分步验证结果
-
+  
 禁止操作:
   - ❌ 使用 multi_edit 工具删除 >100行
   - ❌ 未备份时执行修改
@@ -93,12 +139,12 @@ THEN 执行:
 IF: 审查包含日志输出/错误处理/API调用
 THEN 检查:
   1. 🔴 [强制] 日志中无敏感信息 (密码/token/连接串)
-  → 读取 guidelines/guidelines/v2.md#10-日志分级与敏感信息清洗含可观测性增强
+     → 读取 guidelines/guidelines/v2.md#10-日志分级与敏感信息清洗含可观测性增强
   2. 🔴 [强制] 输入校验完整 (类型/必填/范围)
-  → 读取 guidelines/guidelines/v2.md#9-错误处理与输入校验
+     → 读取 guidelines/guidelines/v2.md#9-错误处理与输入校验
   3. 🟠 [必须] 错误信息可行动且去敏
   4. 🟡 [推荐] 使用查询形状而非具体值
-
+  
 敏感信息正则:
   - API Keys: /(sk|pk|api|token)[-_]?[a-zA-Z0-9]{20,}/
   - 密码: /password|passwd|pwd|secret|credential/i
@@ -157,7 +203,190 @@ THEN 执行:
 
 ---
 
-### 场景 G: 验证流程执行
+### 场景 G: 数据库查询与分析 (🔴 主动数据支持)
+**触发条件**: 
+- 用户询问项目数据相关问题
+- 用户要求数据统计、分析、排查
+- 用户描述问题需要查看实际数据才能诊断
+
+**判断标准**（满足任一即触发）:
+```yaml
+1. 🔴 明确提及数据查询:
+   - "查询 trips 集合"
+   - "统计用户数量"
+   - "分析订单数据"
+   - "最近有多少XXX？"
+   
+2. 🟠 问题诊断需要数据支持:
+   - "为什么这个功能不工作了？" → 需要查看实际数据状态
+   - "用户反馈XX错误" → 需要查询相关记录
+   - "这个字段有什么值？" → 需要查看集合结构
+   - "数据是否正确？" → 需要验证数据内容
+   
+3. 🟡 数据探索与分析:
+   - "这个项目有哪些集合？"
+   - "用户表的结构是什么？"
+   - "数据分布情况如何？"
+   - "有多少条记录？"
+```
+
+**强制执行流程**:
+```yaml
+步骤1: 识别项目上下文 🔴
+  - 从用户问题中识别项目名称（chat/monSQLize/etc）
+  - 如未明确，从当前工作目录或上下文推断
+  - 记录目标项目名称
+
+步骤2: 读取项目 Profile 🔴
+  - 读取 guidelines/profiles/<project>.md
+  - 定位到 "MCP 配置" 章节
+  - 检查是否配置了数据库访问
+  
+步骤3: 验证权限与配置 🔴
+  IF: 未找到 MCP 配置章节
+    → 提示: "该项目未配置 MCP 服务器，无法执行数据库查询"
+    → 询问: "是否需要帮助配置数据库访问？"
+    → 终止流程
+    
+  IF: 配置了 MCP
+    → 记录允许的 MCP 服务器名称（如 mongodb-chat）
+    → 记录数据库名称
+    → 记录允许的操作类型（读/写/限制）
+    → 继续执行
+
+步骤4: 建立数据库连接 🔴
+  - 调用对应的 MCP 连接工具
+  - 示例: mcp_mongodb-chat_connect (如需要)
+  - 或直接使用已连接的实例
+  - 验证连接成功
+
+步骤5: 信息收集（按需执行） 🟠
+  IF: 用户询问"有哪些数据库/集合"
+    → list-databases / list-collections
+  
+  IF: 用户询问"集合结构/字段"
+    → collection-schema
+    → collection-indexes
+  
+  IF: 用户询问"数据量/统计"
+    → count
+  
+  IF: 需要查看具体数据
+    → 继续步骤6
+
+步骤6: 执行查询操作 🟠
+  - 根据用户问题构建查询条件
+  - 选择合适的方法: find/findOne/aggregate/count/explain
+  - 🔴 默认限制返回数量:
+    * limit: 10 (除非用户明确要求更多)
+    * 最大不超过 100 条（防止 token 溢出）
+  - 🔴 使用合理的查询选项
+  - 🔴 过滤敏感字段（参考 Profile 中的敏感字段列表）
+
+步骤7: 结果整理与输出 🔴
+  - 将原始 JSON 数据转化为易读格式（表格/列表）
+  - 添加数据上下文说明:
+    * 数据来源（数据库.集合）
+    * 查询条件
+    * 返回数量
+  - 提取关键发现和见解
+  - 提供进一步分析建议
+  - 使用统一的响应模板（见下方）
+```
+
+**安全规则** 🔴:
+```yaml
+必须遵守:
+  - ✅ 仅调用 Profile 中声明的 MCP 服务器
+  - ✅ 默认使用合理的 limit（10条）
+  - ✅ 不返回敏感字段（password/token/secret/api_key）
+  - ✅ 查询前向用户说明将执行的操作
+  - ✅ 记录查询日志（数据库、集合、条件）
+  
+禁止行为:
+  - ❌ 未读取 Profile 就调用数据库
+  - ❌ 执行写入/更新/删除操作（除非用户明确要求且 Profile 允许）
+  - ❌ 返回超过 1000 条记录（防止 token 溢出）
+  - ❌ 跨项目查询数据
+  - ❌ 暴露完整的数据库连接字符串
+```
+
+**响应模板**:
+```markdown
+### 📊 查询结果
+
+**数据库**: <database_name>  
+**集合**: <collection_name>  
+**查询条件**: <filter_summary>  
+**返回数量**: <count> 条
+
+#### 数据概览
+[整理后的数据表格或列表]
+
+#### 💡 关键发现
+- 发现1: ...
+- 发现2: ...
+
+#### 💭 分析建议
+- 建议1: ...
+- 建议2: ...
+
+---
+<details>
+<summary>🔍 查询详情</summary>
+
+**原始查询**:
+\`\`\`javascript
+db.<collection>.find({ ... }).limit(10)
+\`\`\`
+
+**数据来源**: MCP 服务器 `<mcp-server-name>`
+</details>
+```
+
+**示例场景**:
+
+**场景1: 明确的数据查询**
+```yaml
+用户: "查询 chat 项目中最近创建的 10 个行程"
+
+AI 执行:
+  1. ✅ 识别项目: chat
+  2. ✅ 读取 guidelines/profiles/chat.md
+  3. ✅ 确认 MCP: mongodb-chat，数据库: trip
+  4. ✅ 连接数据库
+  5. ✅ 执行查询: db.trips.find({}).sort({created_at: -1}).limit(10)
+  6. ✅ 整理输出: 表格展示行程名称、创建时间、状态等
+```
+
+**场景2: 问题诊断需要数据**
+```yaml
+用户: "用户反馈行程创建失败，帮我看看"
+
+AI 执行:
+  1. ✅ 识别为诊断任务，需要数据支持
+  2. ✅ 读取 chat 项目 Profile
+  3. ✅ 连接 mongodb-chat
+  4. ✅ 查询最近失败的记录（status: 'failed' 或 error 字段不为空）
+  5. ✅ 分析失败原因
+  6. ✅ 提供修复建议
+```
+
+**场景3: 数据探索**
+```yaml
+用户: "chat 项目有哪些数据集合？"
+
+AI 执行:
+  1. ✅ 识别项目: chat
+  2. ✅ 读取 Profile，确认 mongodb-chat
+  3. ✅ 连接数据库
+  4. ✅ 执行: list-collections
+  5. ✅ 整理输出: 集合列表 + 用途说明（参考 Profile）
+```
+
+---
+
+### 场景 H: 验证流程执行
 **触发条件**: 代码修改完成，需要执行完整验证
 **强制执行**:
 ```yaml
@@ -399,20 +628,20 @@ THEN 按优先级执行验证:
 2. 读取Profile: guidelines/profiles/monSQLize.md
 3. 读取规范: guidelines/guidelines/v2.md#31
 4. 执行任务:
-  [代码] 创建 lib/mongodb/find-page.js
-    [测试] 创建 test/findPage.test.js
-    - ✅ 正常分页测试
-    - ✅ 边界条件测试（limit=0, limit=1000）
-    - ✅ 空结果测试
-    [示例] 创建 examples/findPage.examples.js
-    - ✅ 可独立运行
-    - ✅ 详细注释
-    [文档] 更新 CHANGELOG.md [Unreleased]
-    更新 README.md API说明
+   [代码] 创建 lib/mongodb/find-page.js
+   [测试] 创建 test/findPage.test.js
+          - ✅ 正常分页测试
+          - ✅ 边界条件测试（limit=0, limit=1000）
+          - ✅ 空结果测试
+   [示例] 创建 examples/findPage.examples.js
+          - ✅ 可独立运行
+          - ✅ 详细注释
+   [文档] 更新 CHANGELOG.md [Unreleased]
+          更新 README.md API说明
 5. 验证:
-  - ✅ npm test 全部通过
-  - ✅ node examples/findPage.examples.js 运行成功
-  - ✅ 无敏感信息泄露
+   - ✅ npm test 全部通过
+   - ✅ node examples/findPage.examples.js 运行成功
+   - ✅ 无敏感信息泄露
 6. 提交: PR包含完整四要素
 ```
 
@@ -428,9 +657,9 @@ THEN 按优先级执行验证:
 ```yaml
 1. 识别场景: 场景B - Bug修复
 2. 引导填写: Bug分析模板
-               - 根本原因: 连接未正确释放
-               - 影响对比: 并发>50时连接池耗尽 vs 正常释放
-               - 修复方案: 添加 finally 块确保释放
+   - 根本原因: 连接未正确释放
+   - 影响对比: 并发>50时连接池耗尽 vs 正常释放
+   - 修复方案: 添加 finally 块确保释放
 3. 记录分析: monSQLize/bug-analysis/2025-10-30-connection-leak.md
 4. 实施修复: 修改 lib/connect.js
 5. 添加测试: test/connection.test.js (并发测试)
@@ -452,14 +681,14 @@ THEN 按优先级执行验证:
 2. 检查条件: README.md = 841行 > 100行 ✅
 3. 读取规范: guidelines/guidelines/v2.md#20
 4. 执行策略:
-  [备份] Copy-Item README.md README.md.backup
-    [脚本] 使用PowerShell精确删除附录
-    [编码] UTF-8无BOM
-    [验证] 每步后read_file检查
+   [备份] Copy-Item README.md README.md.backup
+   [脚本] 使用PowerShell精确删除附录
+   [编码] UTF-8无BOM
+   [验证] 每步后read_file检查
 5. 结果:
-  - 原始: 35KB
-  - 优化: 5KB
-  - 节省: 86% ✅
+   - 原始: 35KB
+   - 优化: 5KB
+   - 节省: 86% ✅
 6. 清理: Remove-Item README.md.backup
 ```
 
@@ -474,21 +703,21 @@ THEN 按优先级执行验证:
 **AI执行流程**:
 ```yaml
 1. 识别场景: 场景D - 代码审查/安全检查
-2. 读取规范:
-  - guidelines/guidelines/v2.md#9 (输入校验)
-  - guidelines/guidelines/v2.md#10 (日志安全)
+2. 读取规范: 
+   - guidelines/guidelines/v2.md#9 (输入校验)
+   - guidelines/guidelines/v2.md#10 (日志安全)
 3. 检查项目:
-  [日志安全]
-  - ❌ 发现: logger.info(`连接: ${connectionString}`)
-  - ✅ 修复: logger.info(`连接: ${maskUri(connectionString)}`)
-
-  [输入校验]
-  - ❌ 发现: 缺少类型检查
-  - ✅ 修复: 添加 Joi schema
-
-  [错误处理]
-  - ✅ 已有可行动错误信息
-  - ✅ 已保留原始错误cause
+   [日志安全]
+   - ❌ 发现: logger.info(`连接: ${connectionString}`)
+   - ✅ 修复: logger.info(`连接: ${maskUri(connectionString)}`)
+   
+   [输入校验]
+   - ❌ 发现: 缺少类型检查
+   - ✅ 修复: 添加 Joi schema
+   
+   [错误处理]
+   - ✅ 已有可行动错误信息
+   - ✅ 已保留原始错误cause
 4. 输出报告: 不符合项清单 + 修复建议
 ```
 
@@ -503,14 +732,14 @@ THEN 按优先级执行验证:
 ```yaml
 1. 检查测试用例是否覆盖新增代码路径
 2. 运行单个测试: npm test -- <test-file>
-  3. 检查错误日志是否包含敏感信息
+3. 检查错误日志是否包含敏感信息
 4. 回滚代码: git checkout -- <file>
 ```
 
 ### 如果文档不一致
 ```yaml
 1. 对比 README 与代码实际行为
-  2. 检查 CHANGELOG [Unreleased] 是否有条目
+2. 检查 CHANGELOG [Unreleased] 是否有条目
 3. 运行示例验证: node examples/<file>
 4. 更新类型声明: index.d.ts
 ```
