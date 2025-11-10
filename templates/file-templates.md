@@ -77,6 +77,14 @@ insert_final_newline = true
 - `CHANGELOG.md` 路径与维护方式（Keep a Changelog + SemVer）
 - `README` 的更新触发条件
 
+## MCP 配置（🔴 强制 - 使用 MCP 服务器的项目必填）
+- 允许的 MCP 服务器: `<mcp-server-name>`（如：`mongodb-monsqlize`）
+- 数据库/资源: `<database-name>`（如：`monsqlize`）
+- 用途: `<purpose>`（如：测试数据查询和分析）
+- 限制: `<restrictions>`（可选，如：只读权限、禁止删除操作）
+
+**说明**: AI 助手必须先读取此配置才能调用 MCP 服务器。未配置则禁止调用任何 MCP。
+
 ## 例外与覆盖
 - 例外 X：<规则项> —— 理由/影响面/迁移建议
 
