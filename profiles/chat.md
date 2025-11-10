@@ -50,17 +50,13 @@ npm stop
 
 ```
 app/
-├── controller/          # 控制器层（路由处理）
+├── controller/          # 控制器层（路由处理 + 业务逻辑 + 数据库操作）
 │   ├── home/           # 用户端 API
 │   └── admin/          # 管理端 API
-├── service/            # 服务层（业务逻辑）
-│   ├── trip/           # 行程相关服务
-│   ├── ai/             # AI 相关服务
-│   └── MongoDataModel.ts  # MongoDB 基类
 ├── model/              # Mongoose 数据模型
 ├── middleware/         # 中间件
-├── validator/          # 参数校验器
-├── utils/              # 工具类
+├── validator/          # 参数校验器（🔴 建议迁移到 Controller 内使用 Joi）
+├── utils/              # 工具类（无状态纯函数，替代 Service 层）
 │   ├── ex-error/       # 自定义错误处理
 │   ├── response/       # 统一响应封装
 │   └── http/           # HTTP 请求工具
@@ -78,9 +74,213 @@ typings/                # TypeScript 类型定义
 ├── interface/          # 接口定义
 └── ExEntitys.ts        # 实体类型
 
-test/                   # 测试文件（预留）
+test/                   # 测试文件
+├── unit/               # 单元测试（使用 Mocha + Chai）
+│   ├── features/       # 功能测试
+│   ├── infrastructure/ # 基础设施测试
+│   └── utils/          # 工具函数测试
+└── integration/        # 集成测试
+
 docs/                   # 项目文档
 bug-analysis/           # Bug 分析报告
+
+⚠️ 注意：历史遗留的 `app/service/` 目录中的文件不要继续使用，
+         新功能必须按照"Controller + Utils"模式开发
+```
+
+---
+
+## 架构与技术栈强制规范（🔴 最高优先级）
+
+### 🔴 架构层次禁止项
+
+**禁止使用 Service 层**:
+- ❌ 不创建 `app/service/` 目录下的新文件
+- ❌ 不写业务逻辑 Service 类
+- ✅ Controller 直接操作数据库（使用 `ctx.utilsCrud`）
+- ✅ 复用逻辑封装在 `app/utils/` 目录
+
+**目录结构说明**:
+```
+app/
+├── controller/          # 控制器层（业务逻辑 + 数据库操作）
+├── model/              # Mongoose 模型定义
+├── utils/              # 工具函数（可复用逻辑，无状态纯函数）
+├── middleware/         # 中间件
+└── validator/          # 参数校验器
+```
+
+**为什么禁止 Service 层？**
+- 现有 Service 层代码大多是重复的 CRUD 操作
+- 增加不必要的抽象层，降低代码可读性
+- utilsCrud 已提供统一的数据库操作接口
+- 特殊业务逻辑应封装为 Utils 工具函数
+
+**正确做法**:
+```typescript
+// ✅ 正确 - Controller 直接操作数据库
+export default class NotificationSettingsController extends Controller {
+    public async getSettings() {
+        const { ctx } = this;
+        const { utilsCrud } = ctx as any;
+
+        // 直接查询数据库
+        const settings = await utilsCrud.findOne(ctx.model.NotificationSettings, {
+            userId: ctx.state.user._id,
+            advisorId: ctx.query.advisorId,
+        });
+
+        return ctx.success(settings);
+    }
+}
+
+// ✅ 正确 - 复用逻辑放在 utils
+// app/utils/notification-helpers.ts
+export function maskEmail(email: string): string {
+    return email.replace(/(.{1}).*(@.*)/, '$1***$2');
+}
+
+// ❌ 错误 - 不要创建 Service 层
+// app/service/notification-settings.service.ts  ← 禁止！
+export default class NotificationSettingsService extends Service {
+    public async getSettings() { ... }  // ❌ 不需要
+}
+```
+
+### 🔴 参数验证强制规范
+
+**强制使用 Joi**:
+- ✅ 使用 `ctx.Joi` 定义验证规则
+- ✅ 使用 `ctx.validateJoi()` 进行参数校验
+- ❌ 禁止使用 `class-validator`
+- ❌ 禁止使用 `DTO` 类定义
+- ❌ 禁止使用 `ajv`、`yup` 等其他验证库
+
+**正确做法**:
+```typescript
+export default class NotificationSettingsController extends Controller {
+    public async updateSettings() {
+        const { ctx } = this;
+        const { Joi, validateJoi } = ctx as any;
+
+        // ✅ 正确 - 在 Controller 中直接使用 Joi
+        const body = await validateJoi(Joi.object({
+            advisorId: Joi.string().required(),
+            emailEnabled: Joi.boolean().optional(),
+            silentWaitTime: Joi.number().integer().min(0).max(100).optional(),
+        }), 'body');
+
+        // 使用 body...
+    }
+}
+
+// ❌ 错误 - 不要定义 DTO 类
+// dto/notification-settings.dto.ts  ← 禁止！
+export class UpdateNotificationSettingsDto {
+    @IsBoolean()  // ❌ 不要用 class-validator
+    emailEnabled?: boolean;
+}
+```
+
+### 🔴 测试框架强制规范
+
+**强制使用 Mocha + Chai**:
+- ✅ 使用 `mocha` 作为测试运行器
+- ✅ 使用 `chai` 作为断言库
+- ✅ 使用 `egg-mock` 进行 Egg.js 应用测试
+- ❌ 禁止使用 `Jest`
+- ❌ 禁止使用 `@jest/globals`
+- ❌ 禁止使用 `Ava`、`Tape` 等其他测试框架
+
+**正确做法**:
+```typescript
+// test/unit/features/notification-settings.test.ts
+
+// ✅ 正确 - 使用 Mocha + Chai
+const { describe, it, before, after, beforeEach } = require('mocha');
+const { expect } = require('chai');
+const { app } = require('egg-mock/bootstrap');
+
+describe('NotificationSettings Controller', () => {
+    before(async () => {
+        await app.ready();
+    });
+
+    it('应该返回默认设置', async () => {
+        const result = await app.httpRequest()
+            .get('/api/user/notification-settings')
+            .expect(200);
+
+        expect(result.body.success).to.be.true;
+    });
+});
+
+// ❌ 错误 - 不要使用 Jest
+// import { describe, it, expect } from '@jest/globals';  ← 禁止！
+```
+
+### 🔴 数据库操作强制规范
+
+**强制使用 utilsCrud**:
+- ✅ 使用 `ctx.utilsCrud.findOne()` 查询单条数据
+- ✅ 使用 `ctx.utilsCrud.find()` 查询多条数据
+- ✅ 使用 `ctx.utilsCrud.createOne()` 创建数据
+- ✅ 使用 `ctx.utilsCrud.updateOne()` 更新数据
+- ✅ 使用 `ctx.utilsCrud.deleteOne()` 删除数据（软删除）
+- ⚠️ 谨慎：直接使用 Mongoose Model API（仅特殊场景）
+
+**正确做法**:
+```typescript
+// ✅ 正确 - 使用 utilsCrud
+const settings = await utilsCrud.findOne(ctx.model.NotificationSettings, {
+    userId,
+    advisorId,
+    del_flag: 0,
+}, {
+    lean: true,
+});
+
+// ⚠️ 谨慎 - 仅在 utilsCrud 无法满足时使用
+const settings = await ctx.model.NotificationSettings.findOne({ userId }).lean();
+```
+
+### 🔴 注释语言强制规范
+
+**强制使用中文注释**:
+- ✅ Model 字段必须添加中文注释
+- ✅ 函数必须添加中文注释（说明功能、参数、返回值）
+- ✅ 复杂逻辑必须添加中文行内注释
+- ⚠️ 技术术语可保留英文（如 JWT、OAuth、CRUD）
+
+**正确做法**:
+```typescript
+const schema = new Schema({
+    // 用户ID：关联 users 集合，用于标识通知设置所属用户
+    userId: {
+        type: Schema.Types.String,
+        required: true,
+        index: true, // 查询场景：按用户获取设置
+    },
+
+    // 静默等待时间（分钟）：消息到达后等待 N 分钟再发送通知
+    // 范围：0-100，0表示立即发送，默认5分钟
+    silentWaitTime: {
+        type: Schema.Types.Number,
+        default: 5,
+        min: 0,
+        max: 100,
+    },
+});
+
+/**
+ * 获取通知设置
+ * @param userId - 用户ID
+ * @param advisorId - 顾问ID
+ * @returns 通知设置对象
+ */
+public async getSettings(userId: string, advisorId: string) {
+    // ...
+}
 ```
 
 ---
