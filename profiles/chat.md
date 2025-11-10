@@ -283,6 +283,126 @@ public async getSettings(userId: string, advisorId: string) {
 }
 ```
 
+### 🔴 文件命名规范
+
+**强制使用下划线命名（snake_case）**:
+- ✅ Model文件: `user_preference.ts`、`chat_log.ts`、`trip_config.ts`
+- ✅ Controller文件: `user_preference.ts`、`message_setting.ts`
+- ✅ Utils文件: `user_preference_helpers.ts`、`date_formatter.ts`
+- ✅ 测试文件: `user_preference.test.js`、`chat_log.test.js`
+- ❌ 禁止使用: `user-preference.ts`（kebab-case）
+- ❌ 禁止使用: `userPreference.ts`（camelCase）
+- ❌ 禁止使用: `UserPreference.ts`（PascalCase）
+
+**目录结构命名**:
+- ✅ 目录名使用小写字母，可用下划线分隔
+- ✅ 示例: `app/utils/ex-error/`、`test/unit/features/`
+
+**为什么使用下划线命名？**
+- 项目历史约定（已有90+个文件使用下划线命名）
+- 便于与数据库字段命名保持一致（如 `user_id`、`created_at`）
+- 符合Python、Ruby等语言的命名习惯
+- 避免与TypeScript类名（PascalCase）和变量名（camelCase）混淆
+
+### 🔴 接口文档强制规范
+
+**强制创建API文档**:
+- 🔴 **位置**: `docs/api/<resource_name>.md`
+- 🔴 **时机**: 创建新Controller时必须同步创建
+- 🔴 **内容要求**:
+  - ✅ 接口基本信息（路径、方法、描述、鉴权方式）
+  - ✅ 请求参数（字段名、类型、必填、说明、约束）
+  - ✅ 响应参数（字段名、类型、说明）
+  - ✅ 请求示例（curl命令 + JSON示例）
+  - ✅ 响应示例（成功响应 + 错误响应）
+  - ✅ 数据模型（TypeScript接口定义）
+  - ✅ 错误码（通用错误码 + 业务错误码）
+  - ✅ 使用场景示例（前端代码示例）
+  - ✅ 注意事项（业务规则、性能优化建议）
+
+**文档模板结构**:
+```markdown
+# <资源名称> API 文档
+
+> **功能**: <功能描述>
+> **版本**: v1.0
+> **最后更新**: YYYY-MM-DD
+
+## 📋 目录
+- [1. 获取<资源>](#1-获取资源)
+- [2. 创建<资源>](#2-创建资源)
+- [3. 更新<资源>](#3-更新资源)
+- [4. 删除<资源>](#4-删除资源)
+- [5. 数据模型](#5-数据模型)
+- [6. 错误码](#6-错误码)
+- [7. 使用场景示例](#7-使用场景示例)
+- [8. 注意事项](#8-注意事项)
+
+## 1. 获取<资源>
+
+### 基本信息
+- **接口路径**: `GET /api/<resource>`
+- **接口描述**: <描述>
+- **鉴权方式**: JWT Token (Bearer)
+- **权限要求**: <权限要求>
+
+### 请求参数
+| 字段名 | 类型 | 必填 | 说明 | 默认值 |
+|--------|------|------|------|--------|
+| field1 | string | 是 | 字段说明 | - |
+
+### 请求示例
+\`\`\`bash
+curl -X GET "https://api.example.com/api/<resource>" \\
+  -H "Authorization: Bearer <token>"
+\`\`\`
+
+### 响应参数
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| success | boolean | 请求是否成功 |
+| data | object | 响应数据 |
+
+### 响应示例
+\`\`\`json
+{
+  "success": true,
+  "data": { }
+}
+\`\`\`
+
+## 5. 数据模型
+\`\`\`typescript
+interface <Resource> {
+  _id: string;
+  // ...
+}
+\`\`\`
+
+## 6. 错误码
+| 错误码 | HTTP状态码 | 说明 | 解决方案 |
+|--------|-----------|------|---------|
+| UNAUTHORIZED | 401 | 未登录 | 重新登录 |
+```
+
+**禁止行为** ❌:
+- ❌ 不创建接口文档
+- ❌ 文档与实际代码不一致
+- ❌ 缺少请求/响应示例
+- ❌ 缺少错误码说明
+- ❌ 使用英文编写文档（应使用中文）
+
+**文档更新规范**:
+- ✅ Controller变更时同步更新文档
+- ✅ 在CHANGELOG.md中记录API变更
+- ✅ 使用版本号标记文档版本
+- ✅ 保留变更历史记录
+
+**示例参考**:
+- ✅ `docs/api/user_preference.md` - 用户偏好设置API文档（完整示例）
+- ✅ `docs/api/trip.md` - 行程管理API文档
+- ✅ `docs/api/message.md` - 消息API文档
+
 ---
 
 ## MCP 配置（🔴 强制）
