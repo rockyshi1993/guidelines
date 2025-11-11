@@ -1,0 +1,19 @@
+{
+  "name": "guidelines",
+  "version": "1.0.0",
+  "description": "> **最新版本**:  > - **AI执行入口**: [copilot.md v2.1](./assistant/copilot.md) - AI助手快速决策树（2025-10-30） > - **完整规范**: [v2.0](./guidelines/v2.md) - 20章节详细规范（2025-10-30）",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}
