@@ -1470,33 +1470,34 @@ THEN 按优先级执行验证:
 ### 按关键词查询
 | 关键词 | 场景触发器 | 详细规范章节 |
 |-------|----------|------------|
-| **新增功能** | 场景A | [第3.1章](../guidelines/guidelines/v2.md) |
-| **修改API** | 场景A + E | [第6章](../guidelines/guidelines/v2.md) |
-| **Bug修复** | 场景B | [Bug模板](../guidelines/templates/bug-fix-analysis-template.md) + [第19.1章](../guidelines/guidelines/v2.md) |
-| **主动改进** | 场景F | [第19.1章](../guidelines/guidelines/v2.md) |
-| **验证流程** | 场景G | [第21章](../guidelines/guidelines/v2.md) |
-| **验证脚本** | - | [第22章](../guidelines/guidelines/v2.md) |
-| **CHANGELOG管理** | - | [第5章](../guidelines/guidelines/v2.md) |
-| **大规模编辑** | 场景C | [第20章](../guidelines/guidelines/v2.md) |
-| **代码审查** | 场景D | [第9章](../guidelines/guidelines/v2.md) + [第10章](../guidelines/guidelines/v2.md) |
-| **测试** | 阶段3 + 场景G | [第7章](../guidelines/guidelines/v2.md) + [第21章](../guidelines/guidelines/v2.md) |
-| **文档** | 阶段4 | [第5章](../guidelines/guidelines/v2.md) |
-| **API弃用** | 场景E | [第13章](../guidelines/guidelines/v2.md) |
-| **提交信息** | 阶段5 | [第3章](../guidelines/guidelines/v2.md) |
+| **新增功能** | 场景A | [第3.1章](../guidelines/guidelines/v2.md#31-功能添加完整流程四要素代码-测试-示例-文档) |
+| **修改API** | 场景A + E | [第6章](../guidelines/guidelines/v2.md#6-代码修改与文档联动) |
+| **Bug修复** | 场景B | [Bug模板](../guidelines/templates/bug-fix-analysis-template.md) + [第19.1章](../guidelines/guidelines/v2.md#191-分析报告目录规范) |
+| **主动改进** | 场景F | [第19.2章](../guidelines/guidelines/v2.md#192-改进方案设计规范强制) - 方案设计规范 |
+| **方案设计** | 场景F | [第19.2章](../guidelines/guidelines/v2.md#192-改进方案设计规范强制) - 完整模板 |
+| **验证流程** | 场景H | [第21章](../guidelines/guidelines/v2.md#21-验证与测试策略完整流程) |
+| **验证脚本** | - | [第22章](../guidelines/guidelines/v2.md#22-验证脚本与工具目录规范) |
+| **CHANGELOG管理** | - | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
+| **大规模编辑** | 场景C | [第20章](../guidelines/guidelines/v2.md#20-大规模文件编辑策略ai-辅助开发) |
+| **代码审查** | 场景D | [第9章](../guidelines/guidelines/v2.md#9-错误处理与输入校验) + [第10章](../guidelines/guidelines/v2.md#10-日志分级与敏感信息清洗含可观测性增强) |
+| **测试** | 阶段3 + 场景H | [第7章](../guidelines/guidelines/v2.md#7-测试与质量) + [第21章](../guidelines/guidelines/v2.md#21-验证与测试策略完整流程) |
+| **文档** | 阶段4 | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
+| **API弃用** | 场景E | [第13章](../guidelines/guidelines/v2.md#13-api-稳定性与弃用deprecation) |
+| **提交信息** | 阶段5 | [第3章](../guidelines/guidelines/v2.md#3-提交与-pr-规范) |
 
 ### 按文件操作查询
 | 文件类型 | 何时必须更新 | 优先级 | 参考章节 |
 |---------|------------|-------|---------|
-| **test/*.test.js** | 新增/修改功能、Bug修复 | 🔴 强制 | [第7章](../guidelines/guidelines/v2.md) + [第21章](../guidelines/guidelines/v2.md) |
-| **examples/*.examples.js** | 新增/修改功能 | 🔴 强制 | [第18章](../guidelines/guidelines/v2.md) |
-| **scripts/verify/**/*.js** | 改进完成后验证 | 🟡 推荐 | [第22章](../guidelines/guidelines/v2.md) |
-| **CHANGELOG.md** | 所有对外可见变更 | 🔴 强制 | [第5章](../guidelines/guidelines/v2.md) |
-| **changelogs/**/*.md** | CHANGELOG归档（>500行） | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md) |
-| **README.md** | API变更、默认值变更 | 🟠 必须 | [第6章](../guidelines/guidelines/v2.md) |
-| **STATUS.md** | 功能状态变化 | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md) |
-| **index.d.ts** | TypeScript项目API变更 | 🟡 推荐 | [第12章](../guidelines/guidelines/v2.md) |
-| **analysis-reports/*.md** | 主动性改进分析 | 🟡 推荐 | [第19.1章](../guidelines/guidelines/v2.md) |
-| **bug-analysis/*.md** | Bug修复分析 | 🔴 强制 | [第19.1章](../guidelines/guidelines/v2.md) |
+| **test/*.test.js** | 新增/修改功能、Bug修复 | 🔴 强制 | [第7章](../guidelines/guidelines/v2.md#7-测试与质量) + [第21章](../guidelines/guidelines/v2.md#21-验证与测试策略完整流程) |
+| **examples/*.examples.js** | 新增/修改功能 | 🔴 强制 | [第18章](../guidelines/guidelines/v2.md#18-功能示例目录examples) |
+| **scripts/verify/**/*.js** | 改进完成后验证 | 🟡 推荐 | [第22章](../guidelines/guidelines/v2.md#22-验证脚本与工具目录规范) |
+| **CHANGELOG.md** | 所有对外可见变更 | 🔴 强制 | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
+| **changelogs/**/*.md** | CHANGELOG归档（>500行） | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
+| **README.md** | API变更、默认值变更 | 🟠 必须 | [第6章](../guidelines/guidelines/v2.md#6-代码修改与文档联动) |
+| **STATUS.md** | 功能状态变化 | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
+| **index.d.ts** | TypeScript项目API变更 | 🟡 推荐 | [第12章](../guidelines/guidelines/v2.md#12-目录导出与-typescript-声明) |
+| **analysis-reports/*.md** | 主动性改进分析 | 🟡 推荐 | [第19.2章](../guidelines/guidelines/v2.md#192-改进方案设计规范强制) - 方案设计规范 |
+| **bug-analysis/*.md** | Bug修复分析 | 🔴 强制 | [第19.1章](../guidelines/guidelines/v2.md#191-分析报告目录规范) |
 
 ---
 
