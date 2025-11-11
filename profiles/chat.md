@@ -184,21 +184,38 @@ export class UpdateNotificationSettingsDto {
 
 ### 🔴 测试框架强制规范
 
+**测试文件位置（唯一正确位置）**:
+- ✅ **功能测试**: `test/unit/features/<功能名>.test.js`
+- ✅ **工具函数测试**: `test/unit/utils/<工具名>.test.js`
+- ✅ **基础设施测试**: `test/unit/infrastructure/<模块名>.test.js`
+- ❌ **禁止**: `test/app/controller/` - 规范中未提及，不得创建
+- ❌ **禁止**: `test/integration/` - 除非规范明确要求
+- ❌ **禁止**: 其他任何位置
+
+**示例**:
+```
+✅ 正确：test/unit/features/user_preference.test.js
+✅ 正确：test/unit/utils/date_formatter.test.js
+❌ 错误：test/app/controller/user_preference.test.js  ← 禁止！
+❌ 错误：test/user_preference.test.js  ← 禁止！
+```
+
 **强制使用 Mocha + Chai**:
 - ✅ 使用 `mocha` 作为测试运行器
-- ✅ 使用 `chai` 作为断言库
+- ✅ 使用 `chai` 作为断言库（必须使用 `expect`）
 - ✅ 使用 `egg-mock` 进行 Egg.js 应用测试
 - ❌ 禁止使用 `Jest`
 - ❌ 禁止使用 `@jest/globals`
+- ❌ 禁止使用 Node.js `assert` 或 `node:assert`（必须用 Chai）
 - ❌ 禁止使用 `Ava`、`Tape` 等其他测试框架
 
 **正确做法**:
-```typescript
-// test/unit/features/notification-settings.test.ts
+```javascript
+// test/unit/features/notification-settings.test.js
 
 // ✅ 正确 - 使用 Mocha + Chai
 const { describe, it, before, after, beforeEach } = require('mocha');
-const { expect } = require('chai');
+const { expect } = require('chai');  // ← 必须用 Chai
 const { app } = require('egg-mock/bootstrap');
 
 describe('NotificationSettings Controller', () => {
@@ -208,15 +225,27 @@ describe('NotificationSettings Controller', () => {
 
     it('应该返回默认设置', async () => {
         const result = await app.httpRequest()
-            .get('/api/user/notification-settings')
+            .get('/home/user/notification-settings')
             .expect(200);
 
+        // ✅ 使用 Chai 的 expect
         expect(result.body.success).to.be.true;
+        expect(result.body.data).to.have.property('emailEnabled');
     });
 });
+```
 
-// ❌ 错误 - 不要使用 Jest
-// import { describe, it, expect } from '@jest/globals';  ← 禁止！
+**错误做法**:
+```javascript
+// ❌ 错误 - 使用了 Jest
+import { describe, it, expect } from '@jest/globals';  // ← 禁止！
+
+// ❌ 错误 - 使用了 Node.js assert
+const { strict: assert } = require('node:assert');  // ← 禁止！
+assert.equal(result.body.success, true);  // ← 禁止！应该用 Chai
+
+// ❌ 错误 - 文件位置错误
+// test/app/controller/notification-settings.test.js  ← 禁止！
 ```
 
 ### 🔴 数据库操作强制规范
@@ -1765,3 +1794,96 @@ REDIS_PORT=6379
 **适用对象**: GitHub Copilot / Claude / 其他 AI 助手  
 **维护者**: Chat 服务开发团队
 
+---
+## ❌ 禁止清单（chat 项目 - AI 必读）
+> **这是负面清单！违反任何一项即视为任务失败！**
+### 🔴 测试相关禁止项
+| 禁止项 | 说明 | 正确做法 |
+|--------|------|---------|
+| ❌ 在 `test/app/controller/` 创建测试文件 | 规范中未提及此目录 | ✅ 使用 `test/unit/features/` |
+| ❌ 使用 Node.js `assert` 断言库 | 必须使用 Chai | ✅ 使用 `const { expect } = require('chai')` |
+| ❌ 使用 Jest 测试框架 | 必须使用 Mocha | ✅ 使用 `const { describe, it } = require('mocha')` |
+| ❌ 使用 `@jest/globals` | Jest 相关都禁止 | ✅ 使用 Mocha + Chai |
+| ❌ 测试文件放在根目录 | 必须放在规范指定位置 | ✅ `test/unit/features/<功能名>.test.js` |
+### 🔴 架构相关禁止项
+| 禁止项 | 说明 | 正确做法 |
+|--------|------|---------|
+| ❌ 创建 Service 层 (`app/service/`) | Service 层大多是重复 CRUD | ✅ Controller 直接用 `ctx.utilsCrud` |
+| ❌ 创建 DTO 类 | 不需要 DTO 类定义 | ✅ 使用 Joi schema 验证 |
+| ❌ 创建 Repository 层 | 已有 utilsCrud | ✅ Controller 直接操作数据库 |
+| ❌ 在 Controller 写复杂业务逻辑 | Controller 应简洁 | ✅ 复杂逻辑放 `app/utils/` |
+### 🔴 参数验证禁止项
+| 禁止项 | 说明 | 正确做法 |
+|--------|------|---------|
+| ❌ 使用 `class-validator` | 必须使用 Joi | ✅ `ctx.Joi` + `ctx.validateJoi` |
+| ❌ 使用 `@nestjs/class-validator` | NestJS 装饰器不适用 Egg.js | ✅ 使用 Joi |
+| ❌ 使用 `ajv` | 必须使用 Joi | ✅ 使用 Joi |
+| ❌ 使用 `yup` | 必须使用 Joi | ✅ 使用 Joi |
+| ❌ 使用 `validator.js` | 必须使用 Joi | ✅ 使用 Joi |
+### 🔴 文件命名禁止项
+| 禁止项 | 说明 | 正确做法 |
+|--------|------|---------|
+| ❌ kebab-case (`user-preference.ts`) | 必须用 snake_case | ✅ `user_preference.ts` |
+| ❌ camelCase (`userPreference.ts`) | 必须用 snake_case | ✅ `user_preference.ts` |
+| ❌ PascalCase (`UserPreference.ts`) | 必须用 snake_case（除 Class） | ✅ `user_preference.ts` |
+### 🔴 注释语言禁止项
+| 禁止项 | 说明 | 正确做法 |
+|--------|------|---------|
+| ❌ Model 字段英文注释 | 必须中文 | ✅ `// 用户ID：关联 users 集合` |
+| ❌ 函数英文注释 | 必须中文 | ✅ `/** 获取用户偏好设置 */` |
+| ❌ 复杂逻辑英文注释 | 必须中文 | ✅ `// 静默时间段：22:00-08:00` |
+### 🔴 其他禁止项
+| 禁止项 | 说明 | 正确做法 |
+|--------|------|---------|
+| ❌ 不创建接口文档 | 必须同步创建 | ✅ `docs/api/<resource_name>.md` |
+| ❌ 直接修改 Service 层代码 | Service 层已废弃 | ✅ 迁移到 Controller + Utils |
+| ❌ 使用 TypeORM | 项目使用 Mongoose | ✅ 使用 `ctx.model.<ModelName>` |
+| ❌ 硬编码敏感信息 | 安全隐患 | ✅ 使用环境变量或 Nacos |
+---
+## 🚨 AI 自检清单（每次任务必做）
+在创建任何文件前，必须回答以下问题：
+### 测试相关
+- [ ] Q: 测试文件路径是 `test/unit/features/` 吗？
+- [ ] Q: 使用的是 Mocha + Chai 吗？
+- [ ] Q: 没有使用 Node.js assert 吗？
+- [ ] Q: 没有使用 Jest 吗？
+- [ ] Q: 没有在 `test/app/controller/` 创建文件吗？
+### 架构相关
+- [ ] Q: 没有创建 Service 层吗？
+- [ ] Q: 没有创建 DTO 类吗？
+- [ ] Q: 没有创建 Repository 层吗？
+- [ ] Q: Controller 使用 `ctx.utilsCrud` 了吗？
+### 参数验证相关
+- [ ] Q: 使用的是 Joi 吗？
+- [ ] Q: 没有使用 class-validator 吗？
+### 文件命名相关
+- [ ] Q: 文件名是 snake_case 吗？
+- [ ] Q: 没有使用 kebab-case 或 camelCase 吗？
+### 注释语言相关
+- [ ] Q: Model 字段注释是中文吗？
+- [ ] Q: 函数注释是中文吗？
+### 文档相关
+- [ ] Q: 创建了接口文档 `docs/api/<resource_name>.md` 吗？
+**如果任何一项为 ❌ 或 不确定，立即停止，重新阅读规范！**
+---
+## 📊 为什么需要这个禁止清单？
+### 问题分析
+1. **AI 的通用知识优先于项目规范**
+   - AI 知道 `test/app/controller/` 是常见测试目录
+   - 但 chat 项目规范**只提到** `test/unit/features/`
+   - 结果：AI 创建了错误的目录结构
+2. **AI 的多选一倾向**
+   - AI 知道 `assert` 和 `expect` 都可以用
+   - 但规范**明确要求** Chai 的 `expect`
+   - 结果：AI 随机选择了 `assert`
+3. **AI 的过度设计倾向**
+   - AI 倾向于创建 Service、DTO、Repository 等层次
+   - 但规范**明确禁止**这些层次
+   - 结果：AI 创建了不必要的抽象
+### 解决方案
+**负面清单 + 自检清单 = 100% 遵守规范**
+通过明确列出**禁止的做法**和**强制的自检流程**，确保 AI 在编码前进行验证。
+---
+**规范版本**: v2.1  
+**最后更新**: 2025-11-11  
+**适用**: chat 项目所有 AI 辅助开发任务
