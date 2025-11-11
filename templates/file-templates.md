@@ -91,13 +91,13 @@ insert_final_newline = true
 - 规范版本: OpenAPI 3.0.0
 - 文档路径: `/api-docs`（开发环境）
 - 规范文件: `docs/api/openapi.yaml`
-- 自动生成: 通过代码注解/装饰器生成
+- 维护方式: 手写 YAML 或使用 Swagger Editor
 - 访问限制: 生产环境禁用或仅限内网
 
 ### 集成方式
-- 框架: Express / Fastify / Egg.js / NestJS / FastAPI
-- 工具: swagger-jsdoc / @fastify/swagger / @nestjs/swagger
-- 更新策略: 代码修改后自动更新文档
+- 加载方式: 从 YAML 文件加载（框架无关）
+- 工具: swagger-ui-express / @fastify/swagger-ui / egg-swagger-ui
+- 更新策略: 修改 openapi.yaml 后重启服务
 
 ### 强制字段
 - 每个接口必须包含: summary, tags, parameters, responses
@@ -106,8 +106,8 @@ insert_final_newline = true
 
 ### 验证方式
 - 开发环境: 访问 http://localhost:3000/api-docs 验证
-- CI 检查: 确保 openapi.yaml 文件存在且格式正确
-- 测试集成: 使用 Swagger 定义生成测试用例
+- CI 检查: 确保 openapi.yaml 文件存在且格式正确（Spectral）
+- 同步验证: 验证 API 定义与代码实现一致（scripts/verify-api-sync.js）
 
 ## 例外与覆盖
 - 例外 X：<规则项> —— 理由/影响面/迁移建议
