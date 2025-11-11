@@ -85,6 +85,30 @@ insert_final_newline = true
 
 **说明**: AI 助手必须先读取此配置才能调用 MCP 服务器。未配置则禁止调用任何 MCP。
 
+## API 接口规范（可选 - 仅 API 项目需要）
+
+### Swagger/OpenAPI 配置
+- 规范版本: OpenAPI 3.0.0
+- 文档路径: `/api-docs`（开发环境）
+- 规范文件: `docs/api/openapi.yaml`
+- 自动生成: 通过代码注解/装饰器生成
+- 访问限制: 生产环境禁用或仅限内网
+
+### 集成方式
+- 框架: Express / Fastify / Egg.js / NestJS / FastAPI
+- 工具: swagger-jsdoc / @fastify/swagger / @nestjs/swagger
+- 更新策略: 代码修改后自动更新文档
+
+### 强制字段
+- 每个接口必须包含: summary, tags, parameters, responses
+- 错误码必须与 lib/errors.js 定义一致
+- 认证方式必须明确说明（Bearer Token / API Key）
+
+### 验证方式
+- 开发环境: 访问 http://localhost:3000/api-docs 验证
+- CI 检查: 确保 openapi.yaml 文件存在且格式正确
+- 测试集成: 使用 Swagger 定义生成测试用例
+
 ## 例外与覆盖
 - 例外 X：<规则项> —— 理由/影响面/迁移建议
 
