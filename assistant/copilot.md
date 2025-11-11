@@ -5,7 +5,208 @@
 
 ---
 
-## 🚀 快速决策流程
+## ⚡ 快速自检清单（开始任务前必读）
+
+### 📋 场景 0 检查（任何代码任务前）
+```yaml
+项目识别:
+  [ ] 已识别项目名称（chat/monSQLize/vsse/等）
+  [ ] 已确认 Profile 路径: guidelines/profiles/<project>.md
+
+Profile 读取:
+  [ ] 已完整读取 Profile 文件
+  [ ] 已提取【禁止项】（Service层/DTO/测试框架等）
+  [ ] 已提取【强制项】（Joi/Mocha/utilsCrud等）
+  [ ] 已提取【测试规范】（目录/框架/断言库/命名）
+
+规范确认:
+  [ ] 我知道项目禁止什么
+  [ ] 我知道项目强制什么
+  [ ] 我不会使用项目禁止的技术
+  [ ] 我优先项目规范而非通用实践
+```
+
+### 🗄️ MCP 检查（涉及数据库操作时）
+```yaml
+触发判断:
+  [ ] 是否需要查询真实数据？（是 → 继续检查）
+  [ ] 仅编写代码不执行？（是 → 跳过 MCP 检查）
+
+MCP 配置:
+  [ ] 已读取 Profile 的 "MCP 配置" 章节
+  [ ] 已确认允许的 MCP 服务器名称
+  [ ] 不调用未声明的 MCP 服务器
+```
+
+### 🧪 测试检查（创建测试文件时）
+```yaml
+测试规范:
+  [ ] 测试目录是否符合 Profile？（优先 Profile 规范）
+  [ ] 测试框架是否符合 Profile？（Mocha/Jest/Vitest）
+  [ ] 断言库是否符合 Profile？（Chai/Node.js assert/Jest expect）
+  [ ] 文件命名是否符合 Profile？（kebab-case/snake_case）
+
+自动分类:
+  [ ] 功能测试 → test/unit/features/（对外 API）
+  [ ] 基础设施测试 → test/unit/infrastructure/（logger/errors/cache）
+  [ ] 工具函数测试 → test/unit/utils/（纯函数）
+```
+
+### 📄 文档任务检查（文档修改时）
+```yaml
+代码判断:
+  [ ] 文档中是否包含代码示例？（≥3行 → 执行场景0）
+  [ ] 是否修改 examples/*.js？（是 → 执行场景0）
+  [ ] 是否修改 index.d.ts？（是 → 执行场景0）
+  [ ] 仅纯文本修改？（<3行代码 → 可跳过场景0）
+```
+
+### ✅ 输出确认
+```yaml
+场景0输出:
+  [ ] 已输出场景0执行结果（包含禁止项/强制项）
+  [ ] 输出格式：完整版（有限制）或简化版（无限制）
+
+实时检查:
+  [ ] 每个文件创建/修改后立即输出检查结果
+  [ ] 单文件独立输出 or 批量汇总输出（>3个文件）
+```
+
+---
+
+## � 场景关系图（Mermaid 流程图）
+
+```mermaid
+flowchart TD
+    Start([用户请求]) --> Scene0{场景 0<br/>项目规范检查}
+    
+    Scene0 -->|识别项目| P1[优先级 1: 用户明确提到]
+    Scene0 -->|识别项目| P2[优先级 2: 当前工作目录]
+    Scene0 -->|识别项目| P3[优先级 3: 文件路径]
+    Scene0 -->|识别项目| P4[优先级 4: 询问用户]
+    
+    P1 & P2 & P3 & P4 --> ReadProfile[读取 Profile]
+    
+    ReadProfile --> Extract[智能提取关键信息]
+    Extract --> Check{有禁止项?}
+    
+    Check -->|YES| FullOutput[完整输出<br/>含禁止项列表]
+    Check -->|NO| SimpleOutput[简化输出<br/>通用规范]
+    
+    FullOutput & SimpleOutput --> Scene05{场景 0.5<br/>实时检查}
+    
+    Scene05 -->|≤3 文件| SingleCheck[单文件独立检查]
+    Scene05 -->|>3 文件| BatchCheck[批量汇总检查]
+    
+    SingleCheck & BatchCheck --> TaskType{任务类型识别}
+    
+    TaskType -->|功能新增/修改| SceneA[场景 A: 功能开发<br/>测试+示例+文档]
+    TaskType -->|Bug 修复| SceneB[场景 B: Bug 分析<br/>模板+回归测试]
+    TaskType -->|大规模编辑| SceneC[场景 C: 脚本模式<br/>PowerShell 执行]
+    TaskType -->|代码审查| SceneD[场景 D: 安全检查<br/>日志+校验]
+    TaskType -->|文档更新| SceneE[场景 E: 文档判断<br/>决策矩阵]
+    TaskType -->|主动改进| SceneF[场景 F: 分析报告<br/>analysis-reports]
+    TaskType -->|数据库操作| SceneG{场景 G: MCP 检查}
+    
+    SceneG -->|Profile 有 MCP| MCPCall[调用 MCP 服务器]
+    SceneG -->|Profile 无 MCP| MCPReject[拒绝调用 MCP]
+    
+    SceneA & SceneB & SceneC & SceneD & SceneE & SceneF --> Verify[验证流程<br/>测试+示例+文档]
+    MCPCall & MCPReject --> Verify
+    
+    Verify --> Output([输出结果])
+    
+    style Scene0 fill:#ff6b6b
+    style Scene05 fill:#feca57
+    style SceneA fill:#48dbfb
+    style SceneB fill:#ff9ff3
+    style SceneC fill:#1dd1a1
+    style SceneD fill:#ff6348
+    style SceneE fill:#00d2d3
+    style SceneF fill:#54a0ff
+    style SceneG fill:#5f27cd
+    style Verify fill:#10ac84
+```
+
+### 场景执行优先级
+
+| 优先级 | 场景 | 说明 | 强制性 |
+|--------|------|------|--------|
+| **P0** | 场景 0 | 项目规范检查 | 🔴 所有任务前必执行 |
+| **P0** | 场景 0.5 | 实时检查 | 🔴 文件创建后立即执行 |
+| **P1** | MCP 检查 | 数据库操作前 | 🔴 涉及 MCP 时必执行 |
+| **P2** | 场景 A-F | 任务执行 | 🔴 根据任务类型执行 |
+| **P3** | 验证流程 | 质量保证 | 🟠 任务完成后执行 |
+
+### 场景间依赖关系
+
+```mermaid
+graph LR
+    Scene0[场景 0<br/>规范检查] -.->|前置条件| AllScenes[所有场景]
+    Scene0 -.->|实时监控| Scene05[场景 0.5<br/>实时检查]
+    
+    SceneA[场景 A<br/>功能开发] -->|触发| Verify[验证流程]
+    SceneB[场景 B<br/>Bug修复] -->|触发| Verify
+    SceneC[场景 C<br/>大规模编辑] -->|触发| Verify
+    
+    SceneD[场景 D<br/>代码审查] -.->|可能触发| SceneB
+    SceneE[场景 E<br/>文档更新] -.->|可能触发| SceneA
+    
+    SceneG[场景 G<br/>数据库操作] -.->|前置检查| MCPCheck{MCP 配置检查}
+    MCPCheck -->|允许| Execute[执行查询]
+    MCPCheck -->|禁止| Reject[拒绝执行]
+    
+    style Scene0 fill:#ff6b6b,stroke:#333,stroke-width:4px
+    style Scene05 fill:#feca57,stroke:#333,stroke-width:2px
+    style Verify fill:#10ac84,stroke:#333,stroke-width:3px
+```
+
+### 决策路径示例
+
+#### 示例 1: 新增功能请求
+```
+用户: "在 chat 项目添加消息设置功能"
+    ↓
+场景 0: 读取 chat Profile → 发现禁止 Service 层、强制 Joi
+    ↓
+场景 0.5: 创建文件时实时检查（架构/技术栈/命名）
+    ↓
+场景 A: 执行功能开发（Controller + Utils 模式）
+    ↓
+验证流程: 测试 + 示例 + CHANGELOG + README
+    ↓
+输出完成
+```
+
+#### 示例 2: 数据库查询请求
+```
+用户: "查询 monSQLize 的 trips 集合"
+    ↓
+场景 0: 读取 monSQLize Profile
+    ↓
+场景 G: 检查 MCP 配置 → 发现允许 mongodb-monsqlize
+    ↓
+MCP 调用: 连接数据库 → 执行查询
+    ↓
+输出结果
+```
+
+#### 示例 3: 文档更新请求
+```
+用户: "更新 README，添加分页示例"
+    ↓
+场景 0: 检测代码示例 ≥3 行 → 触发场景 0
+    ↓
+场景 0: 读取 Profile → 应用代码规范（引号/分号）
+    ↓
+场景 E: 判断文档更新范围
+    ↓
+输出完成
+```
+
+---
+
+## �🚀 快速决策流程
 
 ```
 用户请求
@@ -49,11 +250,94 @@ THEN:
 
 ### 🔴 MCP 配置强制检查（数据库操作前必读）
 
-**触发条件**: 任何涉及数据库查询、分析、操作的任务
+**触发条件** (明确边界，满足任一即触发):
+
+**决策树可视化**:
+
+```mermaid
+flowchart TD
+    UserRequest([用户请求]) --> CheckTask{任务类型?}
+    
+    CheckTask -->|明确数据查询| Scenario1[场景1: 明确查询<br/>"查询XX集合"<br/>"统计XX数量"]
+    CheckTask -->|问题诊断| Scenario2[场景2: 问题诊断<br/>"为什么不工作?"<br/>"用户反馈错误"]
+    CheckTask -->|数据探索| Scenario3[场景3: 数据探索<br/>"有哪些集合?"<br/>"数据结构?"]
+    CheckTask -->|编写代码| CodeOnly[仅写代码<br/>不执行查询]
+    CheckTask -->|架构讨论| DiscussOnly[架构讨论<br/>不执行查询]
+    CheckTask -->|文档更新| DocsOnly[文档更新<br/>不执行查询]
+    
+    Scenario1 --> TriggerMCP[✅ 触发 MCP 检查]
+    Scenario2 --> NeedData{需要查看<br/>实际数据?}
+    Scenario3 --> TriggerMCP
+    
+    NeedData -->|YES| TriggerMCP
+    NeedData -->|NO| NoMCP[❌ 不触发 MCP]
+    
+    CodeOnly --> NoMCP
+    DiscussOnly --> NoMCP
+    DocsOnly --> NoMCP
+    
+    TriggerMCP --> ReadProfile[读取 Profile]
+    ReadProfile --> CheckMCP{Profile 有<br/>MCP 配置?}
+    
+    CheckMCP -->|YES| AllowMCP[✅ 允许调用<br/>指定的 MCP 服务器]
+    CheckMCP -->|NO| RejectMCP[❌ 拒绝调用<br/>任何 MCP]
+    
+    AllowMCP --> Execute[执行数据库操作]
+    RejectMCP --> Error[返回错误提示]
+    
+    NoMCP --> CodeOutput[输出代码/建议]
+    
+    style TriggerMCP fill:#1dd1a1
+    style NoMCP fill:#ff6348
+    style AllowMCP fill:#48dbfb
+    style RejectMCP fill:#ff6348
+    style CheckMCP fill:#feca57
+```
+
+**触发规则**:
+
+```yaml
+🔴 必须执行 MCP 检查的场景:
+  1. 用户明确要求查询/分析/修改数据库数据
+     - "查询 XX 集合"
+     - "统计 XX 数量"
+     - "分析 XX 数据"
+     - "最近有多少 XX？"
+  
+  2. 问题诊断需要查看实际数据
+     - "为什么这个功能不工作？" + 需要查看数据状态
+     - "用户反馈 XX 错误" + 需要查询相关记录
+     - "这个字段有什么值？" + 需要查看集合结构
+  
+  3. 数据探索与分析
+     - "这个项目有哪些集合？"
+     - "用户表的结构是什么？"
+     - "数据分布情况如何？"
+
+✅ 不需要执行 MCP 检查的场景:
+  1. 编写操作数据库的代码（但不执行查询）
+     - "帮我写一个查询用户的函数" → 仅写代码，不执行 MCP
+     - "创建 User Model" → 仅定义 schema，不执行 MCP
+     - "实现分页查询功能" → 仅写代码，不执行 MCP
+  
+  2. 讨论数据库设计（纯理论）
+     - "应该用什么数据结构存储？" → 架构讨论，不执行 MCP
+     - "索引应该怎么建？" → 设计讨论，不执行 MCP
+  
+  3. 文档/注释编写
+     - "更新数据库文档" → 纯文档任务，不执行 MCP
+
+判断规则:
+  IF: 需要获取真实数据（查询/统计/分析）
+  THEN: 触发 MCP 检查
+  
+  IF: 仅编写代码或讨论设计
+  THEN: 不触发 MCP 检查
+```
 
 **强制执行流程**:
 ```yaml
-IF: 用户请求涉及 MongoDB/PostgreSQL/MySQL 等数据库操作
+IF: 触发 MCP 检查条件
 THEN 必须执行:
   1. 🔴 读取 guidelines/profiles/<project>.md
   2. 🔴 检查是否有 "MCP 配置" 章节
@@ -70,21 +354,37 @@ THEN 必须执行:
 ```
 
 **示例**（正确流程）:
+
+场景1: 明确的数据查询
 ```yaml
 用户: "查询 monSQLize 项目的 users 集合"
 
 AI 执行:
-  1. ✅ 识别为数据库查询任务
+  1. ✅ 识别为数据库查询任务（触发 MCP 检查）
   2. ✅ 读取 guidelines/profiles/monSQLize.md
   3. ✅ 检查 MCP 配置章节
   4. ✅ 确认允许使用 "mongodb-monsqlize"
   5. ✅ 调用 mongodb-monsqlize MCP 服务器
   6. ✅ 返回查询结果
+```
 
+场景2: 编写代码但不执行查询
+```yaml
+用户: "帮我写一个查询用户的函数"
+
+AI 执行:
+  1. ✅ 识别为代码编写任务（不触发 MCP 检查）
+  2. ✅ 执行场景 0（读取 Profile 获取代码规范）
+  3. ✅ 编写符合项目规范的代码
+  4. ❌ 不调用 MCP 服务器（仅写代码，不执行）
+```
+
+场景3: 项目未配置 MCP
+```yaml
 用户: "查询 chatAI 项目的消息数据"
 
 AI 执行:
-  1. ✅ 识别为数据库查询任务
+  1. ✅ 识别为数据库查询任务（触发 MCP 检查）
   2. ✅ 读取 guidelines/profiles/chatAI.md
   3. ❌ 未找到 MCP 配置章节
   4. ❌ 拒绝调用任何 MCP 服务器
@@ -101,15 +401,106 @@ AI 执行:
 ```yaml
 🔴 【第一优先级】在写任何代码前必须执行:
 
-STEP 1: 识别项目名称
-  - 从用户请求中识别项目（chat/monSQLize/push/user/resource/search）
-  - 从当前工作目录推断（如 D:\Worker\v1\chat\）
-  - 如无法识别，询问用户
+STEP 1: 识别项目名称（按优先级执行）
 
-STEP 2: 读取项目 Profile
-  - 🔴 必须读取: guidelines/profiles/<project>.md
-  - 🔴 必须通读全文，不能跳过任何章节
-  - 🔴 重点关注"禁止"、"强制"、"必须"等关键词
+**决策树可视化**:
+
+```mermaid
+flowchart TD
+    Start([开始识别项目]) --> Check1{用户是否<br/>明确提到项目名?}
+    
+    Check1 -->|YES| Extract1[提取项目名<br/>如: chat, monSQLize]
+    Check1 -->|NO| Check2{当前工作目录<br/>是否匹配模式?}
+    
+    Extract1 --> Validate1{Profile 文件<br/>是否存在?}
+    Validate1 -->|YES| Success1([✅ 使用项目名])
+    Validate1 -->|NO| Error1[❌ 提示Profile不存在]
+    
+    Check2 -->|YES<br/>D:\Project\<name>\*| Extract2[从目录提取<br/>项目名]
+    Check2 -->|NO<br/>如: guidelines/| Check3{正在编辑的<br/>文件路径?}
+    
+    Extract2 --> Validate2{Profile 文件<br/>是否存在?}
+    Validate2 -->|YES| Success2([✅ 使用项目名])
+    Validate2 -->|NO| Check3
+    
+    Check3 -->|YES<br/>D:\Project\<name>\...| Extract3[从文件路径<br/>提取项目名]
+    Check3 -->|NO| AskUser[列出可用项目<br/>询问用户选择]
+    
+    Extract3 --> Validate3{Profile 文件<br/>是否存在?}
+    Validate3 -->|YES| Success3([✅ 使用项目名])
+    Validate3 -->|NO| AskUser
+    
+    AskUser --> UserChoice{用户选择}
+    UserChoice -->|选择项目| Success4([✅ 使用项目名])
+    UserChoice -->|无法选择| Error2([❌ 无法继续])
+    
+    style Check1 fill:#ff6b6b
+    style Check2 fill:#feca57
+    style Check3 fill:#48dbfb
+    style Success1 fill:#1dd1a1
+    style Success2 fill:#1dd1a1
+    style Success3 fill:#1dd1a1
+    style Success4 fill:#1dd1a1
+    style Error1 fill:#ff6348
+    style Error2 fill:#ff6348
+```
+
+**执行规则**:
+  
+  优先级1: 从用户请求中明确识别
+    - 用户明确提到项目名（如"在 chat 项目中..."、"monSQLize 的..."）
+    - 提取关键词，映射到 guidelines/profiles/ 目录中的 .md 文件名
+    - 验证 Profile 文件是否存在
+  
+  优先级2: 从当前工作目录推断
+    IF: 当前目录匹配 D:\Project\<project_name>\*
+    THEN: 使用 <project_name> 作为项目名
+    
+    IF: 当前目录是 D:\Project\guidelines\
+    THEN: 无法从目录推断，进入优先级3
+  
+  优先级3: 从正在编辑的文件路径推断
+    IF: 用户正在编辑 D:\Project\<project_name>\...\file.ext
+    THEN: 使用 <project_name> 作为项目名
+  
+  优先级4: 询问用户
+    IF: 上述方法都无法识别
+    THEN: 列出可用项目，询问用户选择
+  
+  特殊情况: 多项目任务
+    IF: 用户明确提到多个项目（如"在 chat 和 monSQLize 中都实现XX"）
+    THEN: 
+      - 提示用户将分别处理每个项目
+      - 每个项目独立执行场景0
+      - 分别读取各自的 Profile
+
+STEP 2: 读取项目 Profile（智能提取关键信息）
+  
+  执行步骤:
+    1. 🔴 读取完整文件: guidelines/profiles/<project>.md
+    
+    2. 🔴 定位关键章节（按优先级搜索）:
+       [ ] "## 禁止" 或 "## 强制" 或包含 "❌" "✅" 的章节
+       [ ] "## 测试框架" 或 "## 测试规范" 章节
+       [ ] "## MCP 配置" 章节（如涉及数据库操作）
+       [ ] "## 架构规范" 或 "## 技术栈" 章节
+       [ ] "## 编码规范" 或 "## 代码风格" 章节
+    
+    3. 🔴 提取关键信息（使用关键词匹配）:
+       - 搜索包含 "禁止" "❌" "不允许" "不得" 的内容
+       - 搜索包含 "强制" "✅" "必须" "务必" 的内容
+       - 搜索包含 "测试框架" "断言库" "测试目录" 的内容
+    
+    4. 🔴 构建规范清单:
+       - 禁止项列表: [...]
+       - 强制项列表: [...]
+       - 测试规范: [...]
+       - 其他约束: [...]
+  
+  验证标准:
+    IF: 提取的禁止项 + 强制项 + 测试规范 = 0
+    AND: Profile 文件中明确存在这些内容（通过再次扫描确认）
+    THEN: 🚨 提取失败，需要重新仔细阅读 Profile
 
 STEP 3: 提取强制规范
   从 Profile 中提取以下信息并记录:
@@ -167,8 +558,48 @@ STEP 5: 自我检查
   
   如果任何一个答案不符合要求，立即停止，重新执行 STEP 1-4
 
-STEP 6: 🔴 强制输出验证（必须完整输出，用户可见）
-  AI必须按以下格式完整输出，不得省略任何部分:
+STEP 6: 🔴 强制输出验证（必须输出，格式可适应）
+
+**输出决策图**:
+
+```mermaid
+flowchart TD
+    Start([读取 Profile 完成]) --> CheckContent{Profile 内容<br/>分析}
+    
+    CheckContent -->|有禁止项<br/>或强制项| HasRestrictions[发现特殊规范]
+    CheckContent -->|无特殊规范<br/>通用项目| NoRestrictions[通用规范项目]
+    
+    HasRestrictions --> FullOutput[输出完整格式]
+    FullOutput --> FullSections[必须包含所有章节:<br/>1. 项目名称/Profile路径<br/>2. 禁止项列表<br/>3. 强制项列表<br/>4. 5个自我检查问题<br/>5. 执行计划<br/>6. 最终确认]
+    
+    NoRestrictions --> SimpleOutput[输出简化格式]
+    SimpleOutput --> SimpleSections[必须包含:<br/>1. 项目名称/Profile路径<br/>2. 标注"使用通用规范"<br/>3. 最终确认]
+    
+    FullSections --> Validate{所有检查<br/>通过?}
+    SimpleSections --> ValidateSimple{基本信息<br/>完整?}
+    
+    Validate -->|YES| Pass[✅ 场景0检查通过]
+    Validate -->|NO| Fail[❌ 场景0检查失败<br/>重新执行STEP 1-5]
+    
+    ValidateSimple -->|YES| PassSimple[✅ 场景0检查通过]
+    ValidateSimple -->|NO| Fail
+    
+    Pass --> StartTask([开始实现功能])
+    PassSimple --> StartTask
+    Fail --> Retry([重新执行场景0])
+    
+    style CheckContent fill:#feca57
+    style HasRestrictions fill:#ff6b6b
+    style NoRestrictions fill:#48dbfb
+    style FullOutput fill:#ff9ff3
+    style SimpleOutput fill:#00d2d3
+    style Pass fill:#1dd1a1
+    style PassSimple fill:#1dd1a1
+    style Fail fill:#ff6348
+```
+
+IF: Profile 中有明确的禁止项或强制项
+THEN: 必须输出完整的场景0执行结果（包含所有章节）
   
   ═══════════════════════════════════════════════════════════════
   ### 🔴 场景0执行结果（项目规范确认）
@@ -209,6 +640,22 @@ STEP 6: 🔴 强制输出验证（必须完整输出，用户可见）
   [必须输出以下之一:]
   ✅ **场景0检查通过** - 所有检查为YES，禁止项已识别，开始实现功能
   ❌ **场景0检查失败** - 存在问题，需要重新执行STEP 1-5
+  
+  ═══════════════════════════════════════════════════════════════
+
+IF: Profile 中无特殊规范（仅使用通用规范）
+THEN: 输出简化版本:
+  
+  ═══════════════════════════════════════════════════════════════
+  ### 🔴 场景0执行结果（项目规范确认）
+  
+  **项目名称**: <project_name>  
+  **Profile路径**: `guidelines/profiles/<project>.md`  
+  **读取状态**: ✅ 已完整读取
+  **规范类型**: 使用通用规范（无项目特定禁止项或强制项）
+  
+  #### 🎯 最终确认:
+  ✅ **场景0检查通过** - 使用通用规范，开始实现功能
   
   ═══════════════════════════════════════════════════════════════
   
@@ -292,11 +739,84 @@ AI 必须输出:
 
 ---
 
-### 场景 0.5: 实时检查（边写边检，自动纠正）
+### 场景 0.1: 文档任务判断规则 (🔴 强制理解)
 
-**触发条件**: 
+**为什么文档任务也要执行场景 0？**
+
+很多 AI 助手会误认为"文档更新是低风险任务，不需要读 Profile"，这是**错误的**。
+
+**原因**:
+1. **文档包含代码示例** - 必须遵守项目代码规范（引号/分号/模块系统）
+2. **文档描述 API 行为** - 必须与代码实现一致
+3. **示例文件是可运行代码** - `examples/*.js` 就是代码文件，不是纯文档
+4. **类型声明是代码** - `index.d.ts` 是 TypeScript 代码，不是纯文档
+
+**判断标准** (明确触发条件):
+```yaml
+IF: 任务涉及以下任一内容
+  - 编写/修改 examples/*.js（示例代码）
+  - 编写/修改 docs/*.md 中的代码块（代码行数 ≥ 3 行）
+  - 编写/修改 README.md 中的代码示例（代码行数 ≥ 3 行）
+  - 编写/修改 index.d.ts（类型声明）
+  - 编写/修改 test/*.js（测试代码）
+THEN:
+  🔴 必须执行场景 0
+  🔴 必须读取 profiles/<project>.md
+  🔴 必须遵守项目代码规范
+
+IF: 任务仅涉及以下内容
+  - 纯文本说明修改（无代码或代码 < 3 行）
+  - 拼写错误修正
+  - 排版格式调整（标题层级、列表缩进）
+  - 外部链接更新
+THEN:
+  ✅ 可跳过场景 0（非代码任务）
+  ⚠️ 但仍需确认与代码无关（自我检查）
+
+代码行数计算:
+  - 单行: `const x = 1;` → 1 行（不触发）
+  - 两行: 
+    ```javascript
+    const x = 1;
+    const y = 2;
+    ```
+    → 2 行（不触发）
+  - 三行及以上: 
+    ```javascript
+    const user = {
+      name: 'Alice',
+      age: 30
+    };
+    ```
+    → 4 行（触发场景 0）
+```
+
+**错误案例**:
+```yaml
+❌ 错误思维: "我只是更新文档，不需要读 Profile"
+❌ 结果: docs/write-operations.md 用了双引号，项目要求单引号
+❌ 后果: 用户需要手动修改所有代码示例，或修改 Profile 允许双引号
+
+✅ 正确思维: "文档包含代码示例，我必须先读 Profile"
+✅ 执行: 读取 profiles/monSQLize.md，发现要求单引号
+✅ 结果: docs/write-operations.md 的所有代码示例都用单引号
+✅ 后果: 一次到位，无需返工
+```
+
+**自我检查**:
+- [ ] 我是否认为"这只是文档任务，不是代码任务"？ → 如果是，重新阅读本章节
+- [ ] 我的任务是否包含任何代码（即使在文档中）？ → 如果是，必须执行场景 0
+- [ ] 文档中的代码块是否 ≥ 3 行？ → 如果是，必须执行场景 0
+- [ ] 我是否已经读取了项目 Profile？ → 如果没有，立即执行场景 0
+
+---
+
+### 场景 0.5: 实时检查（边写边检，智能触发）
+
+**触发条件** (满足任一即触发): 
 - 场景0通过后，开始编写代码
-- 每完成一个文件的创建或修改
+- 完成一个文件的创建（使用 create_file 工具）
+- 完成一个文件的修改（使用 replace_string_in_file 工具）
 
 **强制执行流程**:
 ```yaml
@@ -377,18 +897,72 @@ AI 必须输出:
   THEN:
     ⚠️ 输出: "⚠️ 提示: Controller已修改，请确认接口文档是否需要更新"
 
-🔴 【强制输出格式】- 每个文件完成后必须输出:
+🔴 【强制输出格式】- 根据文件数量智能输出:
 
-✅ **实时检查**: `<文件路径>`
-  - 架构层次: [✅ 符合 / ❌ 违规: <说明>]
-  - 技术栈: [✅ 符合 / ❌ 违规: <说明>]
-  - 编码规范: [✅ 符合 / ❌ 违规: <说明>]
-  - 文件命名: [✅ 符合 / ❌ 违规: <说明>]
-  - 接口文档: [✅ 已创建 / ⚠️ 需创建 / - 不适用]
-  [如果全部符合] → ✅ 该文件无违规项
-  [如果有违规] → ❌ 已自动修正 <X> 处违规
+**输出决策流程**:
 
-示例输出:
+```mermaid
+flowchart TD
+    FileCreated([文件创建/修改完成]) --> CountFiles{连续创建<br/>文件数量?}
+    
+    CountFiles -->|≤3 个文件| Single[单文件模式]
+    CountFiles -->|>3 个文件| Batch[批量模式]
+    
+    Single --> CheckSingle[检查单个文件]
+    CheckSingle --> HasViolation1{发现违规?}
+    
+    HasViolation1 -->|YES| FixSingle[立即自动修正]
+    HasViolation1 -->|NO| OutputPass1[✅ 该文件无违规项]
+    
+    FixSingle --> OutputFixed1[❌ 已自动修正 X 处违规]
+    
+    Batch --> CheckBatch[检查所有文件]
+    CheckBatch --> HasViolation2{发现违规?}
+    
+    HasViolation2 -->|YES| FixBatch[批量自动修正]
+    HasViolation2 -->|NO| OutputPass2[✅ 所有文件均符合规范]
+    
+    FixBatch --> OutputFixed2[❌ 已修正 N2 个文件<br/>违规清单...]
+    
+    OutputPass1 --> NextFile{还有文件?}
+    OutputFixed1 --> NextFile
+    
+    NextFile -->|YES| Single
+    NextFile -->|NO| Complete([检查完成])
+    
+    OutputPass2 --> Complete
+    OutputFixed2 --> Complete
+    
+    style HasViolation1 fill:#feca57
+    style HasViolation2 fill:#feca57
+    style FixSingle fill:#ff6348
+    style FixBatch fill:#ff6348
+    style OutputPass1 fill:#1dd1a1
+    style OutputPass2 fill:#1dd1a1
+```
+
+IF: 连续创建 ≤ 3 个文件
+THEN: 每个文件独立输出检查结果:
+  ✅ **实时检查**: `<文件路径>`
+    - 架构层次: [✅ 符合 / ❌ 违规: <说明>]
+    - 技术栈: [✅ 符合 / ❌ 违规: <说明>]
+    - 编码规范: [✅ 符合 / ❌ 违规: <说明>]
+    - 文件命名: [✅ 符合 / ❌ 违规: <说明>]
+    - 接口文档: [✅ 已创建 / ⚠️ 需创建 / - 不适用]
+    [如果全部符合] → ✅ 该文件无违规项
+    [如果有违规] → ❌ 已自动修正 <X> 处违规
+
+IF: 连续创建 > 3 个文件（批量创建）
+THEN: 批量输出检查结果（汇总格式）:
+  ✅ **批量实时检查**: 已创建/修改 <N> 个文件
+    - 符合规范: <N1> 个
+    - 发现违规: <N2> 个
+    [如果有违规] → 违规文件清单:
+      1. `<文件路径>` - 违规项: <说明> → ✅ 已修正
+      2. `<文件路径>` - 违规项: <说明> → ✅ 已修正
+    [如果无违规] → ✅ 所有文件均符合项目规范
+
+示例输出（单文件）:
   ✅ **实时检查**: `app/controller/home/user_preference.ts`
     - 架构层次: ✅ 符合（Controller模式）
     - 技术栈: ✅ 符合（使用Joi验证）
@@ -436,10 +1010,10 @@ THEN:
 ```yaml
 IF: 修改了 src/ 或 lib/ 中的代码
 THEN 执行:
-  1. 🔴 [强制] 添加测试用例到 test/ → 读取 guidelines/guidelines/v2.md#31-功能添加完整流程四要素代码-测试-示例-文档
-  2. 🔴 [强制] 添加示例到 examples/ → 读取 guidelines/guidelines/v2.md#31-功能添加完整流程四要素代码-测试-示例-文档
-  3. 🔴 [强制] 更新 CHANGELOG.md [Unreleased] → 读取 guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款
-  4. 🟠 [必须] 更新 README.md (如果API变更) → 读取 guidelines/guidelines/v2.md#6-代码修改与文档联动
+  1. 🔴 [强制] 添加测试用例到 test/ → 读取 guidelines/guidelines/v2.md (第3.1章)
+  2. 🔴 [强制] 添加示例到 examples/ → 读取 guidelines/guidelines/v2.md (第3.1章)
+  3. 🔴 [强制] 更新 CHANGELOG.md [Unreleased] → 读取 guidelines/guidelines/v2.md (第5章)
+  4. 🟠 [必须] 更新 README.md (如果API变更) → 读取 guidelines/guidelines/v2.md (第6章)
   5. 🟡 [推荐] 更新类型声明文件 (如 index.d.ts)
   
 BEFORE 提交:
@@ -478,7 +1052,7 @@ THEN 执行:
 IF: 编辑行数 > 100 OR 删除整个章节/附录
 THEN 执行:
   1. 🔴 [强制] 使用 PowerShell 脚本而非 replace_string_in_file
-     → 读取 guidelines/guidelines/v2.md#20-大规模文件编辑策略ai-辅助开发
+     → 读取 guidelines/guidelines/v2.md (第20章)
   2. 🔴 [强制] 先备份文件: Copy-Item file.md file.md.backup
   3. 🟠 [必须] 使用 UTF-8 无BOM 编码
   4. 🟡 [推荐] 分步验证结果
@@ -498,9 +1072,9 @@ THEN 执行:
 IF: 审查包含日志输出/错误处理/API调用
 THEN 检查:
   1. 🔴 [强制] 日志中无敏感信息 (密码/token/连接串)
-     → 读取 guidelines/guidelines/v2.md#10-日志分级与敏感信息清洗含可观测性增强
+     → 读取 guidelines/guidelines/v2.md (第10章)
   2. 🔴 [强制] 输入校验完整 (类型/必填/范围)
-     → 读取 guidelines/guidelines/v2.md#9-错误处理与输入校验
+     → 读取 guidelines/guidelines/v2.md (第9章)
   3. 🟠 [必须] 错误信息可行动且去敏
   4. 🟡 [推荐] 使用查询形状而非具体值
   
@@ -542,7 +1116,7 @@ IF 仅内部重构/性能优化 (不改API):
 IF: 主动性改进/优化（非Bug响应）
 THEN 执行:
   1. 🟡 [推荐] 创建分析报告: <项目>/analysis-reports/YYYY-MM-DD-主题.md
-     → 读取 guidelines/guidelines/v2.md#191-分析报告目录规范
+     → 读取 guidelines/guidelines/v2.md (第19.1章)
   2. 🟡 [推荐] 填写分析内容:
      - 背景与动机
      - 方案分析
@@ -772,7 +1346,7 @@ THEN 按优先级执行验证:
     - 提交信息符合 Conventional Commits
 
 详细验证流程:
-  → 读取 guidelines/guidelines/v2.md#21-验证与测试策略完整流程
+  → 读取 guidelines/guidelines/v2.md (第21章)
 ```
 
 ---
@@ -942,33 +1516,33 @@ THEN 按优先级执行验证:
 ### 按关键词查询
 | 关键词 | 场景触发器 | 详细规范章节 |
 |-------|----------|------------|
-| **新增功能** | 场景A | [第3.1章](../guidelines/guidelines/v2.md#31-功能添加完整流程四要素代码-测试-示例-文档) |
-| **修改API** | 场景A + E | [第6章](../guidelines/guidelines/v2.md#6-代码修改与文档联动) |
-| **Bug修复** | 场景B | [Bug模板](../guidelines/templates/bug-fix-analysis-template.md) + [第19.1章](../guidelines/guidelines/v2.md#191-分析报告目录规范) |
-| **主动改进** | 场景F | [第19.1章](../guidelines/guidelines/v2.md#191-分析报告目录规范) |
-| **验证流程** | 场景G | [第21章](../guidelines/guidelines/v2.md#21-验证与测试策略完整流程) |
-| **验证脚本** | - | [第22章](../guidelines/guidelines/v2.md#22-验证脚本与工具目录规范) |
-| **CHANGELOG管理** | - | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
-| **大规模编辑** | 场景C | [第20章](../guidelines/guidelines/v2.md#20-大规模文件编辑策略ai-辅助开发) |
-| **代码审查** | 场景D | [第9章](../guidelines/guidelines/v2.md#9-错误处理与输入校验) + [第10章](../guidelines/guidelines/v2.md#10-日志分级与敏感信息清洗含可观测性增强) |
-| **测试** | 阶段3 + 场景G | [第7章](../guidelines/guidelines/v2.md#7-测试与质量) + [第21章](../guidelines/guidelines/v2.md#21-验证与测试策略完整流程) |
-| **文档** | 阶段4 | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
-| **API弃用** | 场景E | [第13章](../guidelines/guidelines/v2.md#13-api-稳定性与弃用deprecation) |
-| **提交信息** | 阶段5 | [第3章](../guidelines/guidelines/v2.md#3-提交与-pr-规范) |
+| **新增功能** | 场景A | [第3.1章](../guidelines/guidelines/v2.md#31) |
+| **修改API** | 场景A + E | [第6章](../guidelines/guidelines/v2.md#6) |
+| **Bug修复** | 场景B | [Bug模板](../guidelines/templates/bug-fix-analysis-template.md) + [第19.1章](../guidelines/guidelines/v2.md#191) |
+| **主动改进** | 场景F | [第19.1章](../guidelines/guidelines/v2.md#191) |
+| **验证流程** | 场景G | [第21章](../guidelines/guidelines/v2.md#21) |
+| **验证脚本** | - | [第22章](../guidelines/guidelines/v2.md#22) |
+| **CHANGELOG管理** | - | [第5章](../guidelines/guidelines/v2.md#5) |
+| **大规模编辑** | 场景C | [第20章](../guidelines/guidelines/v2.md#20) |
+| **代码审查** | 场景D | [第9章](../guidelines/guidelines/v2.md#9) + [第10章](../guidelines/guidelines/v2.md#10) |
+| **测试** | 阶段3 + 场景G | [第7章](../guidelines/guidelines/v2.md#7) + [第21章](../guidelines/guidelines/v2.md#21) |
+| **文档** | 阶段4 | [第5章](../guidelines/guidelines/v2.md#5) |
+| **API弃用** | 场景E | [第13章](../guidelines/guidelines/v2.md#13) |
+| **提交信息** | 阶段5 | [第3章](../guidelines/guidelines/v2.md#3) |
 
 ### 按文件操作查询
 | 文件类型 | 何时必须更新 | 优先级 | 参考章节 |
 |---------|------------|-------|---------|
-| **test/*.test.js** | 新增/修改功能、Bug修复 | 🔴 强制 | [第7章](../guidelines/guidelines/v2.md#7-测试与质量) + [第21章](../guidelines/guidelines/v2.md#21-验证与测试策略完整流程) |
-| **examples/*.examples.js** | 新增/修改功能 | 🔴 强制 | [第18章](../guidelines/guidelines/v2.md#18-功能示例目录examples) |
-| **scripts/verify/**/*.js** | 改进完成后验证 | 🟡 推荐 | [第22章](../guidelines/guidelines/v2.md#22-验证脚本与工具目录规范) |
-| **CHANGELOG.md** | 所有对外可见变更 | 🔴 强制 | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
-| **changelogs/**/*.md** | CHANGELOG归档（>500行） | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
-| **README.md** | API变更、默认值变更 | 🟠 必须 | [第6章](../guidelines/guidelines/v2.md#6-代码修改与文档联动) |
-| **STATUS.md** | 功能状态变化 | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md#5-文档与版本策略含自动创建与示例条款) |
-| **index.d.ts** | TypeScript项目API变更 | 🟡 推荐 | [第12章](../guidelines/guidelines/v2.md#12-目录导出与-typescript-声明) |
-| **analysis-reports/*.md** | 主动性改进分析 | 🟡 推荐 | [第19.1章](../guidelines/guidelines/v2.md#191-分析报告目录规范) |
-| **bug-analysis/*.md** | Bug修复分析 | 🔴 强制 | [第19.1章](../guidelines/guidelines/v2.md#191-分析报告目录规范) |
+| **test/*.test.js** | 新增/修改功能、Bug修复 | 🔴 强制 | [第7章](../guidelines/guidelines/v2.md#7) + [第21章](../guidelines/guidelines/v2.md#21) |
+| **examples/*.examples.js** | 新增/修改功能 | 🔴 强制 | [第18章](../guidelines/guidelines/v2.md#18) |
+| **scripts/verify/**/*.js** | 改进完成后验证 | 🟡 推荐 | [第22章](../guidelines/guidelines/v2.md#22) |
+| **CHANGELOG.md** | 所有对外可见变更 | 🔴 强制 | [第5章](../guidelines/guidelines/v2.md#5) |
+| **changelogs/**/*.md** | CHANGELOG归档（>500行） | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md#5) |
+| **README.md** | API变更、默认值变更 | 🟠 必须 | [第6章](../guidelines/guidelines/v2.md#6) |
+| **STATUS.md** | 功能状态变化 | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md#5) |
+| **index.d.ts** | TypeScript项目API变更 | 🟡 推荐 | [第12章](../guidelines/guidelines/v2.md#12) |
+| **analysis-reports/*.md** | 主动性改进分析 | 🟡 推荐 | [第19.1章](../guidelines/guidelines/v2.md#191) |
+| **bug-analysis/*.md** | Bug修复分析 | 🔴 强制 | [第19.1章](../guidelines/guidelines/v2.md#191) |
 
 ---
 
@@ -1168,3 +1742,324 @@ THEN 按优先级执行验证:
 **更新日期**: 2025-10-30  
 **适用对象**: GitHub Copilot / Claude / 其他 AI 助手  
 **基于规范**: [guidelines/v2.md v2.0](../guidelines/guidelines/v2.md) - 完整的20章节详细规范
+
+---
+
+## 🚨 常见陷阱与错误 (必读)
+
+> **目的**: 总结 AI 助手在执行规范时最容易犯的错误，帮助避免重复问题
+
+### 陷阱 1: 文档任务不读 Profile
+
+**错误思维**:
+```yaml
+❌ "这只是更新文档，不需要读 Profile"
+❌ "文档不是代码，跳过场景 0"
+❌ "只改几行文字，不用那么严格"
+```
+
+**为什么错误**:
+- 文档包含代码示例 → 必须遵守代码规范（引号/分号/模块系统）
+- 文档描述 API 行为 → 必须与代码一致
+- `examples/*.js` 是可运行代码，不是纯文档
+- `index.d.ts` 是 TypeScript 代码，不是纯文档
+
+**正确做法**:
+```yaml
+✅ 任务涉及代码（即使在文档中）→ 执行场景 0
+✅ 代码示例 ≥3 行 → 强制读取 Profile
+✅ 修改 examples/*.js → 强制读取 Profile
+✅ 修改 index.d.ts → 强制读取 Profile
+```
+
+**实际案例**:
+```yaml
+错误: docs/write-operations.md 用了双引号，项目要求单引号
+后果: 用户需要手动修改所有示例，或修改 Profile 允许双引号
+
+正确: 读取 Profile，发现要求单引号，所有示例都用单引号
+结果: 一次到位，无需返工
+```
+
+---
+
+### 陷阱 2: 猜测项目名而非按优先级
+
+**错误思维**:
+```yaml
+❌ "用户说'帮我实现XX'，应该是当前目录的项目吧"
+❌ "看起来是个 Node.js 项目，随便选一个 Profile"
+❌ "不确定项目名，先用通用规范吧"
+```
+
+**为什么错误**:
+- 不同项目有完全不同的规范（chat 禁止 Service 层，monSQLize 可能允许）
+- 猜错项目 → 应用错误的规范 → 违反项目约定
+- 不按优先级 → 可能错过明确的项目名提示
+
+**正确做法**:
+```yaml
+必须按 4 级优先级顺序:
+1. 🔴 用户明确提到项目名 → 直接使用
+   示例: "在 chat 项目中..." → 使用 chat
+   
+2. 🟠 当前工作目录匹配 → 从目录推断
+   示例: D:\Project\monSQLize\ → 使用 monSQLize
+   
+3. 🟡 正在编辑的文件路径 → 从路径推断
+   示例: D:\Project\vsse\src\index.js → 使用 vsse
+   
+4. 🟢 上述都无法识别 → 询问用户
+   示例: 列出可用项目，让用户选择
+```
+
+**实际案例**:
+```yaml
+错误: 用户在 guidelines/ 目录说"实现登录"，AI 猜测是 chat 项目
+后果: 应用了 chat 的禁止项，但实际是 ndsk_core 项目
+
+正确: 无法从上下文推断 → 询问用户选择项目
+结果: 用户明确选择 ndsk_core，应用正确规范
+```
+
+---
+
+### 陷阱 3: 通用实践优先于项目规范
+
+**错误思维**:
+```yaml
+❌ "Service 层是最佳实践，应该使用"
+❌ "DTO 可以提高类型安全，应该推荐"
+❌ "Jest 比 Mocha 更现代，应该升级"
+❌ "这个架构不合理，我来优化一下"
+```
+
+**为什么错误**:
+- 每个项目有自己的历史架构和团队约定
+- Profile 的禁止项都有充分理由（避免重复代码、统一技术栈等）
+- 强行改变会破坏项目一致性
+- 你的"优化"可能与团队决策冲突
+
+**正确做法**:
+```yaml
+🔴 铁律: 项目 Profile 规范 > 通用最佳实践
+
+IF: Profile 明确禁止某个做法
+THEN: 
+  ✅ 100% 遵守项目规范
+  ❌ 禁止使用通用实践（即使你认为是"好实践"）
+  ❌ 禁止自作主张"优化"架构
+  
+示例:
+  Profile 说"禁止 Service 层" → 即使通用实践推荐，也必须禁止
+  Profile 说"强制 Mocha" → 即使 Jest 更流行，也必须用 Mocha
+  Profile 说"强制 Joi" → 即使 class-validator 更现代，也必须用 Joi
+```
+
+**实际案例**:
+```yaml
+错误: chat 项目禁止 Service 层，AI 认为"应该有 Service 层"并创建
+后果: 违反项目架构约定，代码审查被拒绝
+
+正确: 读取 Profile，发现禁止 Service 层，使用 Controller + Utils 模式
+结果: 符合项目规范，顺利通过审查
+```
+
+---
+
+### 陷阱 4: 未读 Profile 就调用 MCP
+
+**错误思维**:
+```yaml
+❌ "用户要查数据，直接调 MCP 就行"
+❌ "连接数据库应该没问题吧"
+❌ "MCP 配置应该都一样的"
+```
+
+**为什么错误**:
+- 不同项目可能连接不同的数据库
+- 错误的 MCP 连接 → 数据污染、安全风险
+- 未配置 MCP 的项目 → 调用会失败
+
+**正确做法**:
+```yaml
+IF: 任务需要数据库操作（查询/统计/分析）
+THEN 必须执行:
+  1. 🔴 读取 guidelines/profiles/<project>.md
+  2. 🔴 检查是否有 "MCP 配置" 章节
+  3. 🔴 确认允许的 MCP 服务器名称
+  4. 🔴 仅调用 Profile 中声明的 MCP 服务器
+  5. ❌ 未声明则禁止调用任何 MCP 服务器
+```
+
+**实际案例**:
+```yaml
+错误: 用户说"查询用户数据"，AI 直接调用 mongodb-chat
+后果: 连接到错误的数据库，返回了错误项目的数据
+
+正确: 读取 Profile，确认允许的 MCP 是 mongodb-monsqlize
+结果: 连接正确的数据库，返回正确的数据
+```
+
+---
+
+### 陷阱 5: 测试文件放错目录
+
+**错误思维**:
+```yaml
+❌ "测试文件应该和源文件在一起"
+❌ "我觉得 test/app/controller/ 更清晰"
+❌ "通用实践是 test/unit/，不用看 Profile"
+```
+
+**为什么错误**:
+- Profile 可能强制特定的测试目录结构
+- 错误的目录 → 测试不被 CI 识别或违反项目约定
+- 每个项目的测试组织方式不同
+
+**正确做法**:
+```yaml
+🔴 强制规则: 必须 100% 遵守 Profile 的测试目录规范
+
+IF: Profile 明确规定测试目录
+THEN:
+  ✅ 只能在 Profile 授权的目录创建测试
+  ❌ 禁止在未授权的目录创建测试
+  ❌ 禁止自作主张"优化"测试结构
+
+示例:
+  Profile 规定: test/unit/features/<功能名>.test.js
+  → 只能在 test/unit/features/ 创建 ✅
+  → 禁止在 test/app/controller/ 创建 ❌
+```
+
+**实际案例**:
+```yaml
+错误: chat 项目规定 test/unit/features/，AI 在 test/app/controller/ 创建
+后果: 测试文件不被 CI 识别，覆盖率统计错误
+
+正确: 读取 Profile，确认测试目录，在 test/unit/features/ 创建
+结果: 测试正常运行，覆盖率正确统计
+```
+
+---
+
+### 陷阱 6: 场景 0 输出敷衍了事
+
+**错误思维**:
+```yaml
+❌ "我心里知道规范就行，不用输出"
+❌ "输出太长了，简化一下"
+❌ "禁止项太多，就说'已读取'就行"
+```
+
+**为什么错误**:
+- 没有输出 → 用户无法验证你是否真的读取了 Profile
+- 简化输出 → 可能遗漏关键的禁止项
+- 敷衍输出 → 无法证明你理解了规范
+
+**正确做法**:
+```yaml
+🔴 强制规则: 必须输出完整的场景 0 执行结果
+
+IF: Profile 中有禁止项或强制项
+THEN: 必须输出完整格式（包含所有章节）:
+  1. ✅ 项目名称、Profile 路径、读取状态
+  2. ✅ 完整的禁止项列表（不能省略）
+  3. ✅ 完整的强制项列表（不能省略）
+  4. ✅ 5 个自我检查问题（带答案）
+  5. ✅ 执行计划（说明将采用的架构/技术栈）
+  6. ✅ 最终确认（通过/失败）
+
+IF: Profile 无特殊规范（通用规范）
+THEN: 输出简化格式:
+  1. ✅ 项目名称、Profile 路径、读取状态
+  2. ✅ 标注"使用通用规范"
+  3. ✅ 最终确认（通过）
+```
+
+**实际案例**:
+```yaml
+错误: AI 只输出"✅ 场景 0 检查通过"，未列出禁止项
+后果: 用户无法确认 AI 是否真的理解了规范，不敢信任
+
+正确: 完整输出禁止项列表、自我检查、执行计划
+结果: 用户清楚看到 AI 理解了规范，可以放心继续
+```
+
+---
+
+### 陷阱 7: 代码示例行数判断错误
+
+**错误思维**:
+```yaml
+❌ "这段代码很短，不用执行场景 0"
+❌ "换行符不算，实际只有 2 行"
+❌ "注释不算代码，跳过"
+```
+
+**为什么错误**:
+- 判断标准不清晰 → 可能遗漏需要规范检查的代码
+- 代码行数计算错误 → 违反触发条件
+
+**正确做法**:
+```yaml
+代码行数计算标准:
+  ✅ 单行: `const x = 1;` → 1 行（不触发）
+  ✅ 两行: 
+     const x = 1;
+     const y = 2;
+     → 2 行（不触发）
+  ✅ 三行及以上: 
+     const user = {
+       name: 'Alice',
+       age: 30
+     };
+     → 4 行（触发场景 0）
+
+计算规则:
+  - 包含注释行
+  - 包含空行
+  - 包含 { } 单独成行
+  - 总行数 ≥ 3 → 触发场景 0
+```
+
+**实际案例**:
+```yaml
+错误: 代码示例 4 行，AI 认为"很短，不用读 Profile"
+后果: 代码示例不符合项目规范（用了双引号而非单引号）
+
+正确: 4 行 ≥ 3 行，触发场景 0，读取 Profile
+结果: 代码示例符合项目规范
+```
+
+---
+
+## 自我检查清单（执行前必读）
+
+在开始任何任务前，问自己这些问题：
+
+### 基础检查
+- [ ] 我是否已识别项目名称？（按 4 级优先级）
+- [ ] 我是否已读取项目 Profile？（完整通读）
+- [ ] 我是否提取了禁止项和强制项？（智能提取）
+
+### 规范理解
+- [ ] 我是否知道项目禁止什么？（能列出具体项）
+- [ ] 我是否知道项目强制什么？（能列出具体项）
+- [ ] 我是否会使用项目禁止的技术？（必须 NO）
+- [ ] 我是否优先项目规范而非通用实践？（必须 YES）
+
+### 特殊场景
+- [ ] 如果是文档任务，是否包含代码（≥3 行）？
+- [ ] 如果需要数据库操作，是否检查了 MCP 配置？
+- [ ] 如果创建测试，是否确认了测试目录？
+
+### 输出验证
+- [ ] 我是否输出了场景 0 执行结果？（强制）
+- [ ] 输出是否包含禁止项列表？（如有）
+- [ ] 输出是否包含自我检查结果？（5 个问题）
+
+**如果任何一项为 ❌，立即停止，重新执行相关步骤！**
+
+---
