@@ -5,6 +5,142 @@
 
 ---
 
+## ⚡ 3秒快速检查（任务开始前强制执行）
+
+> **执行时间**: 任务开始前 3 秒 | **失败后果**: 立即停止，不得继续
+
+### ✅ 强制检查清单
+
+```yaml
+第1秒: 项目识别
+  [ ] 识别项目名称（从请求/目录/路径/询问用户）
+  [ ] 确认 Profile 路径: guidelines/profiles/<project>.md
+  ❌ 如果识别失败 → 🛑 HALT → 询问用户
+
+第2秒: Profile 读取
+  [ ] 完整读取 Profile 文件（不得跳过任何部分）
+  [ ] 提取【禁止项】→ 记录到短期记忆
+  [ ] 提取【强制项】→ 记录到短期记忆
+  [ ] 提取【测试规范】→ 记录到短期记忆
+  ❌ 如果 Profile 不存在 → 🛑 HALT → 要求创建
+
+第3秒: 规则确认
+  [ ] 自我确认: "我知道这个项目禁止什么" ✅
+  [ ] 自我确认: "我知道测试应该放在哪" ✅
+  [ ] 自我确认: "我不会使用禁止的技术" ✅
+  ❌ 如果任何一项为空/不确定 → 🛑 HALT → 重新读取
+```
+
+### 🚫 绝对禁止（Absolute Forbidden）
+
+```
+❌ 未读取 Profile 就写代码
+❌ 在 Profile 未授权的目录创建测试
+❌ 使用 Profile 禁止的技术栈（Service层/DTO/Jest等）
+❌ 跳过场景0的5个自我检查问题
+❌ 省略场景0执行结果的输出
+❌ 调用未在 Profile 中声明的 MCP 服务器
+```
+
+### 💡 短期记忆提示（Memory Hint）
+
+**在整个对话过程中，你应该始终记住**:
+```
+项目名称: <从第1秒识别>
+Profile路径: guidelines/profiles/<project>.md
+禁止项: <从Profile提取，如: Service层, DTO, Jest>
+测试目录: <从Profile提取，如: test/unit/features/>
+测试框架: <从Profile提取，如: Mocha + Chai expect>
+MCP配置: <从Profile提取，如: mongodb-monsqlize>
+```
+
+**如果你忘记了任何一项 → 🛑 立即停止 → 重新读取 Profile**
+
+---
+
+## 🚨 强制断点（MUST HALT）
+
+> **触发后必须停止所有操作，等待修正**
+
+### 断点 1: 场景0未通过 🔴
+```yaml
+触发条件: 自我检查5个问题中任何一个为 NO
+必须执行:
+  - 🛑 立即停止当前任务
+  - 🔴 不得继续编写代码
+  - 🔴 不得创建任何文件
+  - ✅ 输出: "❌ 场景0检查失败"
+  - ✅ 显示: 哪个问题失败了
+  - ✅ 重新执行 STEP 1-5
+```
+
+### 断点 2: Profile不存在 🔴
+```yaml
+触发条件: guidelines/profiles/<project>.md 不存在
+必须执行:
+  - 🛑 立即停止
+  - ❌ 不得使用默认规范
+  - ✅ 输出: "该项目没有 Profile 配置"
+  - ✅ 询问用户: "请提供项目名称或创建 Profile"
+```
+
+### 断点 3: 测试目录冲突 🔴
+```yaml
+触发条件: Profile规定目录 != 计划创建的目录
+必须执行:
+  - 🛑 立即停止
+  - 🔴 不得创建测试文件
+  - ✅ 输出: "测试目录不符合 Profile 规范"
+  - ✅ 显示对比:
+      Profile 要求: test/unit/features/
+      你的计划: test/app/controller/
+  - ✅ 修正计划后重新检查
+```
+
+### 断点 4: 使用禁止的技术 🔴
+```yaml
+触发条件: 代码中使用了 Profile 禁止的库/框架
+必须执行:
+  - 🛑 立即停止
+  - 🔴 删除已创建的文件
+  - ✅ 输出: "检测到禁止的技术栈"
+  - ✅ 显示对比:
+      Profile 禁止: Service层, Jest
+      你的代码中使用了: Service层
+  - ✅ 使用允许的技术重新实现
+```
+
+### 断点 5: MCP未授权 🔴
+```yaml
+触发条件: 尝试调用未在 Profile 中声明的 MCP
+必须执行:
+  - 🛑 拒绝调用
+  - ❌ 不得执行任何 MCP 操作
+  - ✅ 输出: "该项目未配置此 MCP 服务器"
+  - ✅ 显示: Profile 中允许的 MCP（如果有）
+  - ✅ 建议: 使用其他方法或要求用户添加配置
+```
+
+---
+
+## 📚 结构化决策支持
+
+> **新增**: 使用 YAML 决策树提高执行效率
+
+**决策树文件**: `guidelines/decision-tree.yaml`
+
+**使用方式**:
+1. 遇到不确定的决策 → 查询 decision-tree.yaml
+2. 按照 YAML 中的 check_order 执行
+3. 遵守 mandatory_steps 和 breakpoints
+
+**核心优势**:
+- ✅ 结构化数据，减少歧义
+- ✅ 快速查询，减少 Token 消耗
+- ✅ 预检查机制，避免返工
+
+---
+
 ## ⚡ 快速自检清单（开始任务前必读）
 
 ### 📋 场景 0 检查（任何代码任务前）
@@ -115,17 +251,6 @@ flowchart TD
     MCPCall & MCPReject --> Verify
     
     Verify --> Output([输出结果])
-    
-    style Scene0 fill:#ff6b6b
-    style Scene05 fill:#feca57
-    style SceneA fill:#48dbfb
-    style SceneB fill:#ff9ff3
-    style SceneC fill:#1dd1a1
-    style SceneD fill:#ff6348
-    style SceneE fill:#00d2d3
-    style SceneF fill:#54a0ff
-    style SceneG fill:#5f27cd
-    style Verify fill:#10ac84
 ```
 
 ### 场景执行优先级
@@ -155,10 +280,6 @@ graph LR
     SceneG[场景 G<br/>数据库操作] -.->|前置检查| MCPCheck{MCP 配置检查}
     MCPCheck -->|允许| Execute[执行查询]
     MCPCheck -->|禁止| Reject[拒绝执行]
-    
-    style Scene0 fill:#ff6b6b,stroke:#333,stroke-width:4px
-    style Scene05 fill:#feca57,stroke:#333,stroke-width:2px
-    style Verify fill:#10ac84,stroke:#333,stroke-width:3px
 ```
 
 ### 决策路径示例
@@ -206,7 +327,123 @@ MCP 调用: 连接数据库 → 执行查询
 
 ---
 
-## �🚀 快速决策流程
+## 🔐 MCP 调用统一检查流程（强制）
+
+> **触发时机**: 任何 MCP 工具调用前（mongodb/postgresql/etc）
+> **强制要求**: 100% 遵守，无例外
+
+### 决策树（Single Source of Truth）
+
+```mermaid
+flowchart TD
+    Start([需要调用 MCP?]) --> ReadProfile[读取 Profile]
+    ReadProfile --> CheckSection{找到 MCP 配置章节?}
+    
+    CheckSection -->|YES| Extract[提取允许的服务器列表]
+    CheckSection -->|NO| Reject1[❌ 拒绝调用]
+    
+    Extract --> Validate{MCP名称在允许列表?}
+    Validate -->|YES| Allow[✅ 允许调用]
+    Validate -->|NO| Reject2[❌ 拒绝调用]
+    
+    Reject1 --> Error1[输出: 该项目未配置 MCP]
+    Reject2 --> Error2[输出: 该 MCP 未授权]
+    
+    Allow --> Execute[执行 MCP 操作]
+```
+
+### 强制执行步骤
+
+```yaml
+STEP 1: 任务判断
+  IF: 任务涉及数据库查询/分析/修改
+  THEN: 继续 STEP 2
+  ELSE: 跳过 MCP 检查
+
+STEP 2: Profile 读取
+  - 读取: guidelines/profiles/<project>.md
+  - 定位: "## MCP 配置" 章节
+  - 如果不存在 → 🛑 断点 5 → 拒绝调用
+
+STEP 3: 配置提取
+  从 MCP 配置章节提取:
+  [ ] 允许的 MCP 服务器: <mcp-server-name>
+  [ ] 数据库名称: <database-name>
+  [ ] 用途说明: <purpose>
+  [ ] 限制条件: <restrictions>（如：只读、禁止删除）
+
+STEP 4: 权限验证
+  比较: 计划调用的 MCP 名称 vs Profile 允许列表
+  IF: 在允许列表中
+    → ✅ 允许调用
+  ELSE:
+    → ❌ 🛑 断点 5 → 拒绝调用
+
+STEP 5: 执行操作
+  - 调用允许的 MCP 服务器
+  - 使用 Profile 指定的数据库
+  - 遵守限制条件（只读/禁止删除等）
+```
+
+### 示例对照
+
+#### ✅ 正确流程
+```yaml
+用户: "查询 monSQLize 项目的 trips 集合"
+
+AI 执行:
+  1. 识别项目: monSQLize ✅
+  2. 读取 Profile: guidelines/profiles/monSQLize.md ✅
+  3. 找到 MCP 配置:
+     - 允许的服务器: mongodb-monsqlize ✅
+     - 数据库: monsqlize ✅
+  4. 验证: mongodb-monsqlize 在允许列表 ✅
+  5. 调用: mongodb-monsqlize ✅
+  6. 返回结果 ✅
+```
+
+#### ❌ 错误流程
+```yaml
+用户: "查询 chatAI 项目的消息数据"
+
+AI 执行:
+  1. 识别项目: chatAI ✅
+  2. 读取 Profile: guidelines/profiles/chatAI.md ✅
+  3. 查找 MCP 配置: ❌ 未找到
+  4. 🛑 断点 5 触发
+  5. 输出: "该项目未配置 MCP 服务器，无法执行数据库操作"
+  6. 建议: "请在 Profile 中添加 MCP 配置，或使用其他方法"
+```
+
+### Profile 配置标准格式
+
+```markdown
+## MCP 配置（强制格式）
+
+- 允许的 MCP 服务器: `mongodb-monsqlize`
+- 数据库: monsqlize
+- 用途: 测试数据查询和分析
+- 限制: 只读权限，禁止删除操作
+
+**说明**: AI 助手必须先读取此配置才能调用 MCP 服务器。未配置则禁止调用任何 MCP。
+```
+
+### 快速检查表
+
+```
+调用 MCP 前必须确认:
+  [ ] 已读取项目 Profile
+  [ ] 已找到 MCP 配置章节
+  [ ] 已提取允许的服务器列表
+  [ ] 当前 MCP 在允许列表中
+  [ ] 了解限制条件（只读/禁止删除等）
+
+任何一项未确认 → � 拒绝调用
+```
+
+---
+
+## ⚡ 快速决策流程
 
 ```
 用户请求
@@ -286,12 +523,6 @@ flowchart TD
     RejectMCP --> Error[返回错误提示]
     
     NoMCP --> CodeOutput[输出代码/建议]
-    
-    style TriggerMCP fill:#1dd1a1
-    style NoMCP fill:#ff6348
-    style AllowMCP fill:#48dbfb
-    style RejectMCP fill:#ff6348
-    style CheckMCP fill:#feca57
 ```
 
 **触发规则**:
@@ -395,347 +626,77 @@ AI 执行:
 
 ## 🎯 场景触发器 (IF-THEN 规则)
 
-### 场景 0: 项目规范强制检查 (所有场景前必执行)
-**触发条件**: 开始任何代码实现任务
-**强制执行**:
+### 场景 0: 项目规范强制检查 (🔴 所有场景前必执行)
+
+**触发条件**: 开始任何代码实现任务  
+**快速执行清单**:
+
 ```yaml
 🔴 【第一优先级】在写任何代码前必须执行:
 
-STEP 1: 识别项目名称（按优先级执行）
+STEP 1: 识别项目名称
+  [ ] 优先级1: 用户请求中明确提到（如"在 chat 项目中..."）
+  [ ] 优先级2: 当前工作目录（D:\Project\<project_name>\*）
+  [ ] 优先级3: 正在编辑的文件路径
+  [ ] 优先级4: 询问用户选择
+  [ ] 验证 Profile 文件存在: guidelines/profiles/<project>.md
+  
+  详见: 场景0详细实施指南 - STEP 1
 
-**决策树可视化**:
-
-```mermaid
-flowchart TD
-    Start([开始识别项目]) --> Check1{用户是否<br/>明确提到项目名?}
-    
-    Check1 -->|YES| Extract1[提取项目名<br/>如: chat, monSQLize]
-    Check1 -->|NO| Check2{当前工作目录<br/>是否匹配模式?}
-    
-    Extract1 --> Validate1{Profile 文件<br/>是否存在?}
-    Validate1 -->|YES| Success1([✅ 使用项目名])
-    Validate1 -->|NO| Error1[❌ 提示Profile不存在]
-    
-    Check2 -->|YES<br/>D:\Project\<name>\*| Extract2[从目录提取<br/>项目名]
-    Check2 -->|NO<br/>如: guidelines/| Check3{正在编辑的<br/>文件路径?}
-    
-    Extract2 --> Validate2{Profile 文件<br/>是否存在?}
-    Validate2 -->|YES| Success2([✅ 使用项目名])
-    Validate2 -->|NO| Check3
-    
-    Check3 -->|YES<br/>D:\Project\<name>\...| Extract3[从文件路径<br/>提取项目名]
-    Check3 -->|NO| AskUser[列出可用项目<br/>询问用户选择]
-    
-    Extract3 --> Validate3{Profile 文件<br/>是否存在?}
-    Validate3 -->|YES| Success3([✅ 使用项目名])
-    Validate3 -->|NO| AskUser
-    
-    AskUser --> UserChoice{用户选择}
-    UserChoice -->|选择项目| Success4([✅ 使用项目名])
-    UserChoice -->|无法选择| Error2([❌ 无法继续])
-    
-    style Check1 fill:#ff6b6b
-    style Check2 fill:#feca57
-    style Check3 fill:#48dbfb
-    style Success1 fill:#1dd1a1
-    style Success2 fill:#1dd1a1
-    style Success3 fill:#1dd1a1
-    style Success4 fill:#1dd1a1
-    style Error1 fill:#ff6348
-    style Error2 fill:#ff6348
-```
-
-**执行规则**:
+STEP 2: 读取项目 Profile
+  [ ] 读取 guidelines/profiles/<project>.md（完整通读）
+  [ ] 定位关键章节：禁止/强制/测试框架/MCP配置/架构规范
+  [ ] 智能提取：禁止项、强制项、测试规范、其他约束
+  [ ] 构建规范清单（记录到短期记忆）
   
-  优先级1: 从用户请求中明确识别
-    - 用户明确提到项目名（如"在 chat 项目中..."、"monSQLize 的..."）
-    - 提取关键词，映射到 guidelines/profiles/ 目录中的 .md 文件名
-    - 验证 Profile 文件是否存在
-  
-  优先级2: 从当前工作目录推断
-    IF: 当前目录匹配 D:\Project\<project_name>\*
-    THEN: 使用 <project_name> 作为项目名
-    
-    IF: 当前目录是 D:\Project\guidelines\
-    THEN: 无法从目录推断，进入优先级3
-  
-  优先级3: 从正在编辑的文件路径推断
-    IF: 用户正在编辑 D:\Project\<project_name>\...\file.ext
-    THEN: 使用 <project_name> 作为项目名
-  
-  优先级4: 询问用户
-    IF: 上述方法都无法识别
-    THEN: 列出可用项目，询问用户选择
-  
-  特殊情况: 多项目任务
-    IF: 用户明确提到多个项目（如"在 chat 和 monSQLize 中都实现XX"）
-    THEN: 
-      - 提示用户将分别处理每个项目
-      - 每个项目独立执行场景0
-      - 分别读取各自的 Profile
-
-STEP 2: 读取项目 Profile（智能提取关键信息）
-  
-  执行步骤:
-    1. 🔴 读取完整文件: guidelines/profiles/<project>.md
-    
-    2. 🔴 定位关键章节（按优先级搜索）:
-       [ ] "## 禁止" 或 "## 强制" 或包含 "❌" "✅" 的章节
-       [ ] "## 测试框架" 或 "## 测试规范" 章节
-       [ ] "## MCP 配置" 章节（如涉及数据库操作）
-       [ ] "## 架构规范" 或 "## 技术栈" 章节
-       [ ] "## 编码规范" 或 "## 代码风格" 章节
-    
-    3. 🔴 提取关键信息（使用关键词匹配）:
-       - 搜索包含 "禁止" "❌" "不允许" "不得" 的内容
-       - 搜索包含 "强制" "✅" "必须" "务必" 的内容
-       - 搜索包含 "测试框架" "断言库" "测试目录" 的内容
-    
-    4. 🔴 构建规范清单:
-       - 禁止项列表: [...]
-       - 强制项列表: [...]
-       - 测试规范: [...]
-       - 其他约束: [...]
-  
-  验证标准:
-    IF: 提取的禁止项 + 强制项 + 测试规范 = 0
-    AND: Profile 文件中明确存在这些内容（通过再次扫描确认）
-    THEN: 🚨 提取失败，需要重新仔细阅读 Profile
+  详见: 场景0详细实施指南 - STEP 2
 
 STEP 3: 提取强制规范
-  从 Profile 中提取以下信息并记录:
+  [ ] 架构层次: Service层/Repository层/DTO类？
+  [ ] 验证方式: Joi/class-validator/其他？
+  [ ] 测试框架: Mocha/Jest/其他？（🔴 强制）
+  [ ] 测试目录: test/unit/features/ 或其他？（🔴 强制）
+  [ ] 断言库: Chai expect/Node.js assert/Jest expect？（🔴 强制）
+  [ ] 数据库操作: utilsCrud/Mongoose/TypeORM？
+  [ ] 注释语言: 中文/英文？
+  [ ] 其他特定要求
   
-  [ ] 架构层次:
-      - 是否禁止 Service 层？
-      - 是否禁止 Repository 层？
-      - 是否禁止 DTO 定义？
-      
-  [ ] 验证方式:
-      - 强制使用 Joi？
-      - 强制使用 class-validator？
-      - 其他验证库？
-      
-  [ ] 测试框架:
-      - 强制使用 Mocha？
-      - 强制使用 Jest？
-      - 其他测试框架？
-      
-  [ ] 数据库操作:
-      - 是否使用 utilsCrud？
-      - 是否直接使用 Mongoose？
-      - 是否使用 TypeORM？
-      
-  [ ] 注释语言:
-      - 强制中文注释？
-      - 允许英文注释？
-      
-  [ ] 其他特定要求:
-      - 文件命名规范
-      - 目录结构要求
-      - 响应格式要求
+  详见: 场景0详细实施指南 - STEP 3
 
 STEP 4: 冲突检查
-  IF: Profile 规范 与 通用最佳实践 冲突
-  THEN: 🔴 无条件遵守 Profile 规范
+  [ ] IF Profile规范 与 通用最佳实践 冲突
+      THEN 🔴 无条件遵守 Profile 规范
   
-  示例冲突:
-    - Profile: "禁止 Service 层" vs 通用实践: "推荐 Service 层"
-      → 遵守 Profile，禁止 Service 层 ✅
-      
-    - Profile: "强制 Joi" vs 通用实践: "推荐 class-validator"
-      → 遵守 Profile，使用 Joi ✅
-      
-    - Profile: "强制 Mocha" vs 通用实践: "推荐 Jest"
-      → 遵守 Profile，使用 Mocha ✅
+  详见: 场景0详细实施指南 - STEP 4
 
-STEP 5: 自我检查
-  在开始写代码前，大声问自己:
-  1. "我是否已读取项目 Profile？" → 必须 YES
-  2. "我是否知道项目禁止什么？" → 必须 YES
-  3. "我是否会使用项目禁止的技术？" → 必须 NO
-  4. "我是否优先项目规范而非通用实践？" → 必须 YES
-  5. "我是否需要重新读取 Profile？" → 如前4个有问题，必须 YES
+STEP 5: 自我检查（5个核心问题）
+  [ ] 1. 我是否已读取项目Profile？ → 必须 YES
+  [ ] 2. 我是否知道项目禁止什么？ → 必须 YES
+  [ ] 3. 我是否会使用项目禁止的技术？ → 必须 NO
+  [ ] 4. 我是否优先项目规范而非通用实践？ → 必须 YES
+  [ ] 5. 我是否需要重新读取Profile？ → 如前4个有问题，必须 YES
   
-  如果任何一个答案不符合要求，立即停止，重新执行 STEP 1-4
+  详见: 场景0详细实施指南 - STEP 5
 
-STEP 6: 🔴 强制输出验证（必须输出，格式可适应）
-
-**输出决策图**:
-
-```mermaid
-flowchart TD
-    Start([读取 Profile 完成]) --> CheckContent{Profile 内容<br/>分析}
-    
-    CheckContent -->|有禁止项<br/>或强制项| HasRestrictions[发现特殊规范]
-    CheckContent -->|无特殊规范<br/>通用项目| NoRestrictions[通用规范项目]
-    
-    HasRestrictions --> FullOutput[输出完整格式]
-    FullOutput --> FullSections[必须包含所有章节:<br/>1. 项目名称/Profile路径<br/>2. 禁止项列表<br/>3. 强制项列表<br/>4. 5个自我检查问题<br/>5. 执行计划<br/>6. 最终确认]
-    
-    NoRestrictions --> SimpleOutput[输出简化格式]
-    SimpleOutput --> SimpleSections[必须包含:<br/>1. 项目名称/Profile路径<br/>2. 标注"使用通用规范"<br/>3. 最终确认]
-    
-    FullSections --> Validate{所有检查<br/>通过?}
-    SimpleSections --> ValidateSimple{基本信息<br/>完整?}
-    
-    Validate -->|YES| Pass[✅ 场景0检查通过]
-    Validate -->|NO| Fail[❌ 场景0检查失败<br/>重新执行STEP 1-5]
-    
-    ValidateSimple -->|YES| PassSimple[✅ 场景0检查通过]
-    ValidateSimple -->|NO| Fail
-    
-    Pass --> StartTask([开始实现功能])
-    PassSimple --> StartTask
-    Fail --> Retry([重新执行场景0])
-    
-    style CheckContent fill:#feca57
-    style HasRestrictions fill:#ff6b6b
-    style NoRestrictions fill:#48dbfb
-    style FullOutput fill:#ff9ff3
-    style SimpleOutput fill:#00d2d3
-    style Pass fill:#1dd1a1
-    style PassSimple fill:#1dd1a1
-    style Fail fill:#ff6348
-```
-
-IF: Profile 中有明确的禁止项或强制项
-THEN: 必须输出完整的场景0执行结果（包含所有章节）
+STEP 6: 强制输出验证
+  🔴 必须输出场景0执行结果（包含以下内容）:
+  [ ] 项目名称、Profile路径、读取状态
+  [ ] 禁止项列表（如有）
+  [ ] 强制项列表（如有）
+  [ ] 5个自我检查问题的答案
+  [ ] 执行计划（架构/验证/测试/数据库）
+  [ ] 最终确认（✅通过 或 ❌失败）
   
-  ═══════════════════════════════════════════════════════════════
-  ### 🔴 场景0执行结果（项目规范确认）
-  
-  **项目名称**: <project_name>  
-  **Profile路径**: `guidelines/profiles/<project>.md`  
-  **读取状态**: ✅ 已完整读取（必须YES）
-  
-  ---
-  
-  #### 📋 提取到的【禁止项】（必须列出）:
-  [如果Profile中有禁止项，必须全部列出，格式如下:]
-  - ❌ **禁止XXX层** - 原因: <原因> | 替代方案: <方案>
-  - ❌ **禁止XXX库** - 原因: <原因> | 替代方案: <方案>
-  [如果没有禁止项，输出: "- 无特定禁止项"]
-  
-  #### ✅ 提取到的【强制项】（必须列出）:
-  [如果Profile中有强制项，必须全部列出，格式如下:]
-  - ✅ **强制使用XXX** - 说明: <说明>
-  - ✅ **强制XXX规范** - 说明: <说明>
-  [如果没有强制项，输出: "- 使用通用规范"]
-  
-  #### 🔍 自我检查结果:
-  1. ❓ 我是否已读取项目Profile？ → [✅ YES / ❌ NO]
-  2. ❓ 我是否知道项目禁止什么？ → [✅ YES（已列出X项） / ❌ NO]
-  3. ❓ 我是否会使用项目禁止的技术？ → [✅ NO / ❌ YES]
-  4. ❓ 我是否优先项目规范而非通用实践？ → [✅ YES / ❌ NO]
-  5. ❓ 我是否需要重新读取Profile？ → [✅ NO / ❌ YES]
-  
-  #### 📊 我的执行计划（基于以上规范）:
-  [必须明确说明将采用的架构/技术栈/实现方式，并与禁止项对比]
-  - 架构模式: <说明为什么这样选择>
-  - 验证方式: <说明为什么这样选择>
-  - 测试框架: <说明为什么这样选择>
-  - 数据库操作: <说明为什么这样选择>
-  
-  #### 🎯 最终确认:
-  [必须输出以下之一:]
-  ✅ **场景0检查通过** - 所有检查为YES，禁止项已识别，开始实现功能
-  ❌ **场景0检查失败** - 存在问题，需要重新执行STEP 1-5
-  
-  ═══════════════════════════════════════════════════════════════
-
-IF: Profile 中无特殊规范（仅使用通用规范）
-THEN: 输出简化版本:
-  
-  ═══════════════════════════════════════════════════════════════
-  ### 🔴 场景0执行结果（项目规范确认）
-  
-  **项目名称**: <project_name>  
-  **Profile路径**: `guidelines/profiles/<project>.md`  
-  **读取状态**: ✅ 已完整读取
-  **规范类型**: 使用通用规范（无项目特定禁止项或强制项）
-  
-  #### 🎯 最终确认:
-  ✅ **场景0检查通过** - 使用通用规范，开始实现功能
-  
-  ═══════════════════════════════════════════════════════════════
-  
-执行规则:
-  IF: 任何一项自我检查为 ❌ NO（不符合要求）
-  OR: 禁止项列表为空但Profile中明确有禁止项
-  OR: 执行计划与Profile冲突
-  THEN: 
-    - 🔴 输出 "❌ 场景0检查失败"
-    - 🔴 立即停止，不得继续写代码
-    - 🔴 重新执行 STEP 1-5
-    - 🔴 重新输出完整的场景0执行结果
-  
-  IF: 所有自我检查为 ✅ YES 
-  AND: 禁止项已正确列出
-  AND: 执行计划不违反Profile规范
-  THEN:
-    - ✅ 输出 "✅ 场景0检查通过"
-    - ✅ 可以开始实现功能
-    - ✅ 实现过程中持续遵守已识别的规范
+  详见: 场景0详细实施指南 - STEP 6（完整输出模板）
 
 禁止行为 ❌:
   - 未读取 Profile 就开始写代码
-  - 读取 Profile 但忽略"禁止"条款
-  - 认为"通用最佳实践"比"项目规范"更重要
-  - 自作主张"优化"项目架构
   - 使用项目明确禁止的技术栈
-  - 🔴 【新增】省略或简化 STEP 6 的输出
-  - 🔴 【新增】在心里默念而不输出场景0执行结果
-  - 🔴 【新增】输出不完整的场景0执行结果
+  - 省略 STEP 6 的输出
+  - 在 Profile 未授权的目录创建测试文件
 ```
 
-**执行示例**:
-```yaml
-用户: "帮我在 chat 项目实现消息设置功能"
-
-AI 必须输出:
-  ═══════════════════════════════════════════════════════════════
-  ### 🔴 场景0执行结果（项目规范确认）
-  
-  **项目名称**: chat  
-  **Profile路径**: `guidelines/profiles/chat.md`  
-  **读取状态**: ✅ 已完整读取
-  
-  ---
-  
-  #### 📋 提取到的【禁止项】:
-  - ❌ **禁止Service层** - 原因: 项目中Service层几乎都是重复的 | 替代方案: Controller + Utils模式
-  - ❌ **禁止DTO类** - 原因: 使用Joi验证即可 | 替代方案: Joi schema
-  - ❌ **禁止Repository层** - 原因: 使用utilsCrud | 替代方案: utilsCrud
-  - ❌ **禁止class-validator** - 原因: 项目统一使用Joi | 替代方案: Joi
-  - ❌ **禁止Jest** - 原因: 项目统一使用Mocha | 替代方案: Mocha
-  
-  #### ✅ 提取到的【强制项】:
-  - ✅ **强制使用Joi验证** - 说明: 所有输入必须使用Joi进行验证
-  - ✅ **强制使用Mocha测试** - 说明: 测试框架必须使用Mocha
-  - ✅ **强制中文注释** - 说明: Model/Controller/Utils中的注释必须使用中文
-  - ✅ **强制使用utilsCrud** - 说明: 数据库操作必须使用utilsCrud而非直接Mongoose
-  
-  #### 🔍 自我检查结果:
-  1. ❓ 我是否已读取项目Profile？ → ✅ YES
-  2. ❓ 我是否知道项目禁止什么？ → ✅ YES（已列出5项禁止）
-  3. ❓ 我是否会使用项目禁止的技术？ → ✅ NO
-  4. ❓ 我是否优先项目规范而非通用实践？ → ✅ YES
-  5. ❓ 我是否需要重新读取Profile？ → ✅ NO
-  
-  #### 📊 我的执行计划（基于以上规范）:
-  - 架构模式: Controller + Utils（不使用Service层，遵守禁止项1）
-  - 验证方式: Joi schema（不使用DTO/class-validator，遵守禁止项2和4）
-  - 测试框架: Mocha（不使用Jest，遵守禁止项5）
-  - 数据库操作: utilsCrud（不直接使用Mongoose，遵守强制项4）
-  - 注释语言: 中文（遵守强制项3）
-  
-  #### 🎯 最终确认:
-  ✅ **场景0检查通过** - 所有检查为YES，禁止项已识别，开始实现功能
-  
-  ═══════════════════════════════════════════════════════════════
-  
-  现在开始实现功能...
-```
+**完整详细说明**: 参见下方"场景0详细实施指南（参考手册）"章节
 
 ---
 
@@ -932,13 +893,6 @@ flowchart TD
     
     OutputPass2 --> Complete
     OutputFixed2 --> Complete
-    
-    style HasViolation1 fill:#feca57
-    style HasViolation2 fill:#feca57
-    style FixSingle fill:#ff6348
-    style FixBatch fill:#ff6348
-    style OutputPass1 fill:#1dd1a1
-    style OutputPass2 fill:#1dd1a1
 ```
 
 IF: 连续创建 ≤ 3 个文件
@@ -1516,33 +1470,33 @@ THEN 按优先级执行验证:
 ### 按关键词查询
 | 关键词 | 场景触发器 | 详细规范章节 |
 |-------|----------|------------|
-| **新增功能** | 场景A | [第3.1章](../guidelines/guidelines/v2.md#31) |
-| **修改API** | 场景A + E | [第6章](../guidelines/guidelines/v2.md#6) |
-| **Bug修复** | 场景B | [Bug模板](../guidelines/templates/bug-fix-analysis-template.md) + [第19.1章](../guidelines/guidelines/v2.md#191) |
-| **主动改进** | 场景F | [第19.1章](../guidelines/guidelines/v2.md#191) |
-| **验证流程** | 场景G | [第21章](../guidelines/guidelines/v2.md#21) |
-| **验证脚本** | - | [第22章](../guidelines/guidelines/v2.md#22) |
-| **CHANGELOG管理** | - | [第5章](../guidelines/guidelines/v2.md#5) |
-| **大规模编辑** | 场景C | [第20章](../guidelines/guidelines/v2.md#20) |
-| **代码审查** | 场景D | [第9章](../guidelines/guidelines/v2.md#9) + [第10章](../guidelines/guidelines/v2.md#10) |
-| **测试** | 阶段3 + 场景G | [第7章](../guidelines/guidelines/v2.md#7) + [第21章](../guidelines/guidelines/v2.md#21) |
-| **文档** | 阶段4 | [第5章](../guidelines/guidelines/v2.md#5) |
-| **API弃用** | 场景E | [第13章](../guidelines/guidelines/v2.md#13) |
-| **提交信息** | 阶段5 | [第3章](../guidelines/guidelines/v2.md#3) |
+| **新增功能** | 场景A | [第3.1章](../guidelines/guidelines/v2.md) |
+| **修改API** | 场景A + E | [第6章](../guidelines/guidelines/v2.md) |
+| **Bug修复** | 场景B | [Bug模板](../guidelines/templates/bug-fix-analysis-template.md) + [第19.1章](../guidelines/guidelines/v2.md) |
+| **主动改进** | 场景F | [第19.1章](../guidelines/guidelines/v2.md) |
+| **验证流程** | 场景G | [第21章](../guidelines/guidelines/v2.md) |
+| **验证脚本** | - | [第22章](../guidelines/guidelines/v2.md) |
+| **CHANGELOG管理** | - | [第5章](../guidelines/guidelines/v2.md) |
+| **大规模编辑** | 场景C | [第20章](../guidelines/guidelines/v2.md) |
+| **代码审查** | 场景D | [第9章](../guidelines/guidelines/v2.md) + [第10章](../guidelines/guidelines/v2.md) |
+| **测试** | 阶段3 + 场景G | [第7章](../guidelines/guidelines/v2.md) + [第21章](../guidelines/guidelines/v2.md) |
+| **文档** | 阶段4 | [第5章](../guidelines/guidelines/v2.md) |
+| **API弃用** | 场景E | [第13章](../guidelines/guidelines/v2.md) |
+| **提交信息** | 阶段5 | [第3章](../guidelines/guidelines/v2.md) |
 
 ### 按文件操作查询
 | 文件类型 | 何时必须更新 | 优先级 | 参考章节 |
 |---------|------------|-------|---------|
-| **test/*.test.js** | 新增/修改功能、Bug修复 | 🔴 强制 | [第7章](../guidelines/guidelines/v2.md#7) + [第21章](../guidelines/guidelines/v2.md#21) |
-| **examples/*.examples.js** | 新增/修改功能 | 🔴 强制 | [第18章](../guidelines/guidelines/v2.md#18) |
-| **scripts/verify/**/*.js** | 改进完成后验证 | 🟡 推荐 | [第22章](../guidelines/guidelines/v2.md#22) |
-| **CHANGELOG.md** | 所有对外可见变更 | 🔴 强制 | [第5章](../guidelines/guidelines/v2.md#5) |
-| **changelogs/**/*.md** | CHANGELOG归档（>500行） | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md#5) |
-| **README.md** | API变更、默认值变更 | 🟠 必须 | [第6章](../guidelines/guidelines/v2.md#6) |
-| **STATUS.md** | 功能状态变化 | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md#5) |
-| **index.d.ts** | TypeScript项目API变更 | 🟡 推荐 | [第12章](../guidelines/guidelines/v2.md#12) |
-| **analysis-reports/*.md** | 主动性改进分析 | 🟡 推荐 | [第19.1章](../guidelines/guidelines/v2.md#191) |
-| **bug-analysis/*.md** | Bug修复分析 | 🔴 强制 | [第19.1章](../guidelines/guidelines/v2.md#191) |
+| **test/*.test.js** | 新增/修改功能、Bug修复 | 🔴 强制 | [第7章](../guidelines/guidelines/v2.md) + [第21章](../guidelines/guidelines/v2.md) |
+| **examples/*.examples.js** | 新增/修改功能 | 🔴 强制 | [第18章](../guidelines/guidelines/v2.md) |
+| **scripts/verify/**/*.js** | 改进完成后验证 | 🟡 推荐 | [第22章](../guidelines/guidelines/v2.md) |
+| **CHANGELOG.md** | 所有对外可见变更 | 🔴 强制 | [第5章](../guidelines/guidelines/v2.md) |
+| **changelogs/**/*.md** | CHANGELOG归档（>500行） | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md) |
+| **README.md** | API变更、默认值变更 | 🟠 必须 | [第6章](../guidelines/guidelines/v2.md) |
+| **STATUS.md** | 功能状态变化 | 🟡 推荐 | [第5章](../guidelines/guidelines/v2.md) |
+| **index.d.ts** | TypeScript项目API变更 | 🟡 推荐 | [第12章](../guidelines/guidelines/v2.md) |
+| **analysis-reports/*.md** | 主动性改进分析 | 🟡 推荐 | [第19.1章](../guidelines/guidelines/v2.md) |
+| **bug-analysis/*.md** | Bug修复分析 | 🔴 强制 | [第19.1章](../guidelines/guidelines/v2.md) |
 
 ---
 
@@ -1591,7 +1545,7 @@ THEN 按优先级执行验证:
 ```yaml
 1. 识别场景: 场景A - 功能新增/修改
 2. 读取Profile: guidelines/profiles/monSQLize.md
-3. 读取规范: guidelines/guidelines/v2.md#31
+3. 读取规范: guidelines/guidelines/v2.md
 4. 执行任务:
    [代码] 创建 lib/mongodb/find-page.js
    [测试] 创建 test/findPage.test.js
@@ -1644,7 +1598,7 @@ THEN 按优先级执行验证:
 ```yaml
 1. 识别场景: 场景C - 大规模编辑
 2. 检查条件: README.md = 841行 > 100行 ✅
-3. 读取规范: guidelines/guidelines/v2.md#20
+3. 读取规范: guidelines/guidelines/v2.md
 4. 执行策略:
    [备份] Copy-Item README.md README.md.backup
    [脚本] 使用PowerShell精确删除附录
@@ -1669,8 +1623,8 @@ THEN 按优先级执行验证:
 ```yaml
 1. 识别场景: 场景D - 代码审查/安全检查
 2. 读取规范: 
-   - guidelines/guidelines/v2.md#9 (输入校验)
-   - guidelines/guidelines/v2.md#10 (日志安全)
+   - guidelines/guidelines/v2.md (输入校验)
+   - guidelines/guidelines/v2.md (日志安全)
 3. 检查项目:
    [日志安全]
    - ❌ 发现: logger.info(`连接: ${connectionString}`)
@@ -2031,6 +1985,338 @@ THEN: 输出简化格式:
 
 正确: 4 行 ≥ 3 行，触发场景 0，读取 Profile
 结果: 代码示例符合项目规范
+```
+
+---
+
+## 📖 场景0详细实施指南（参考手册）
+
+> **目的**: 本章节提供场景0的完整实施细节，包括决策树、详细步骤和示例。
+> **使用时机**: 当主场景0清单中有不清楚的步骤时，参考本章节。
+
+### STEP 1 详解: 项目识别策略
+
+**决策树可视化**:
+
+```mermaid
+flowchart TD
+    Start([开始识别项目]) --> Check1{用户是否<br/>明确提到项目名?}
+    
+    Check1 -->|YES| Extract1[提取项目名<br/>如: chat, monSQLize]
+    Check1 -->|NO| Check2{当前工作目录<br/>是否匹配模式?}
+    
+    Extract1 --> Validate1{Profile 文件<br/>是否存在?}
+    Validate1 -->|YES| Success1([✅ 使用项目名])
+    Validate1 -->|NO| Error1[❌ 提示Profile不存在]
+    
+    Check2 -->|YES<br/>D:\Project\<name>\*| Extract2[从目录提取<br/>项目名]
+    Check2 -->|NO<br/>如: guidelines/| Check3{正在编辑的<br/>文件路径?}
+    
+    Extract2 --> Validate2{Profile 文件<br/>是否存在?}
+    Validate2 -->|YES| Success2([✅ 使用项目名])
+    Validate2 -->|NO| Check3
+    
+    Check3 -->|YES<br/>D:\Project\<name>\...| Extract3[从文件路径<br/>提取项目名]
+    Check3 -->|NO| AskUser[列出可用项目<br/>询问用户选择]
+    
+    Extract3 --> Validate3{Profile 文件<br/>是否存在?}
+    Validate3 -->|YES| Success3([✅ 使用项目名])
+    Validate3 -->|NO| AskUser
+    
+    AskUser --> UserChoice{用户选择}
+    UserChoice -->|选择项目| Success4([✅ 使用项目名])
+    UserChoice -->|无法选择| Error2([❌ 无法继续])
+```
+
+**执行规则**:
+
+**优先级1**: 从用户请求中明确识别
+- 用户明确提到项目名（如"在 chat 项目中..."、"monSQLize 的..."）
+- 提取关键词，映射到 guidelines/profiles/ 目录中的 .md 文件名
+- 验证 Profile 文件是否存在
+
+**优先级2**: 从当前工作目录推断
+```yaml
+IF: 当前目录匹配 D:\Project\<project_name>\*
+THEN: 使用 <project_name> 作为项目名
+
+IF: 当前目录是 D:\Project\guidelines\
+THEN: 无法从目录推断，进入优先级3
+```
+
+**优先级3**: 从正在编辑的文件路径推断
+```yaml
+IF: 用户正在编辑 D:\Project\<project_name>\...\file.ext
+THEN: 使用 <project_name> 作为项目名
+```
+
+**优先级4**: 询问用户
+```yaml
+IF: 上述方法都无法识别
+THEN: 列出可用项目，询问用户选择
+```
+
+**特殊情况: 多项目任务**
+```yaml
+IF: 用户明确提到多个项目（如"在 chat 和 monSQLize 中都实现XX"）
+THEN: 
+  - 提示用户将分别处理每个项目
+  - 每个项目独立执行场景0
+  - 分别读取各自的 Profile
+```
+
+---
+
+### STEP 2 详解: Profile智能提取
+
+**执行步骤**:
+
+1. **读取完整文件**: `guidelines/profiles/<project>.md`
+
+2. **定位关键章节**（按优先级搜索）:
+   - [ ] "## 禁止" 或 "## 强制" 或包含 "❌" "✅" 的章节
+   - [ ] "## 测试框架" 或 "## 测试规范" 章节
+   - [ ] "## MCP 配置" 章节（如涉及数据库操作）
+   - [ ] "## 架构规范" 或 "## 技术栈" 章节
+   - [ ] "## 编码规范" 或 "## 代码风格" 章节
+
+3. **提取关键信息**（使用关键词匹配）:
+   - 搜索包含 "禁止" "❌" "不允许" "不得" 的内容
+   - 搜索包含 "强制" "✅" "必须" "务必" 的内容
+   - 搜索包含 "测试框架" "断言库" "测试目录" 的内容
+
+4. **构建规范清单**:
+   - 禁止项列表: [...]
+   - 强制项列表: [...]
+   - 测试规范: [...]
+   - 其他约束: [...]
+
+**验证标准**:
+```yaml
+IF: 提取的禁止项 + 强制项 + 测试规范 = 0
+AND: Profile 文件中明确存在这些内容（通过再次扫描确认）
+THEN: 🚨 提取失败，需要重新仔细阅读 Profile
+```
+
+---
+
+### STEP 3 详解: 提取强制规范清单
+
+从 Profile 中提取以下信息并记录:
+
+**架构层次**:
+- [ ] 是否禁止 Service 层？
+- [ ] 是否禁止 Repository 层？
+- [ ] 是否禁止 DTO 定义？
+
+**验证方式**:
+- [ ] 强制使用 Joi？
+- [ ] 强制使用 class-validator？
+- [ ] 其他验证库？
+
+**测试框架**:
+- [ ] 强制使用 Mocha？
+- [ ] 强制使用 Jest？
+- [ ] 其他测试框架？
+
+**数据库操作**:
+- [ ] 是否使用 utilsCrud？
+- [ ] 是否直接使用 Mongoose？
+- [ ] 是否使用 TypeORM？
+
+**注释语言**:
+- [ ] 强制中文注释？
+- [ ] 允许英文注释？
+
+**其他特定要求**:
+- [ ] 文件命名规范
+- [ ] 目录结构要求
+- [ ] 响应格式要求
+
+---
+
+### STEP 4 详解: 冲突检查规则
+
+```yaml
+IF: Profile 规范 与 通用最佳实践 冲突
+THEN: 🔴 无条件遵守 Profile 规范
+
+示例冲突:
+  - Profile: "禁止 Service 层" vs 通用实践: "推荐 Service 层"
+    → 遵守 Profile，禁止 Service 层 ✅
+    
+  - Profile: "强制 Joi" vs 通用实践: "推荐 class-validator"
+    → 遵守 Profile，使用 Joi ✅
+    
+  - Profile: "强制 Mocha" vs 通用实践: "推荐 Jest"
+    → 遵守 Profile，使用 Mocha ✅
+```
+
+---
+
+### STEP 5 详解: 自我检查问题
+
+在开始写代码前，大声问自己:
+
+1. **"我是否已读取项目 Profile？"** → 必须 YES
+2. **"我是否知道项目禁止什么？"** → 必须 YES
+3. **"我是否会使用项目禁止的技术？"** → 必须 NO
+4. **"我是否优先项目规范而非通用实践？"** → 必须 YES
+5. **"我是否需要重新读取 Profile？"** → 如前4个有问题，必须 YES
+
+```yaml
+IF: 任何一个答案不符合要求
+THEN: 立即停止，重新执行 STEP 1-4
+```
+
+---
+
+### STEP 6 详解: 输出格式规范
+
+**输出决策图**:
+
+```mermaid
+flowchart TD
+    Start([读取 Profile 完成]) --> CheckContent{Profile 内容<br/>分析}
+    
+    CheckContent -->|有禁止项<br/>或强制项| HasRestrictions[发现特殊规范]
+    CheckContent -->|无特殊规范<br/>通用项目| NoRestrictions[通用规范项目]
+    
+    HasRestrictions --> FullOutput[输出完整格式]
+    FullOutput --> FullSections[必须包含所有章节:<br/>1. 项目名称/Profile路径<br/>2. 禁止项列表<br/>3. 强制项列表<br/>4. 5个自我检查问题<br/>5. 执行计划<br/>6. 最终确认]
+    
+    NoRestrictions --> SimpleOutput[输出简化格式]
+    SimpleOutput --> SimpleSections[必须包含:<br/>1. 项目名称/Profile路径<br/>2. 标注"使用通用规范"<br/>3. 最终确认]
+    
+    FullSections --> Validate{所有检查<br/>通过?}
+    SimpleSections --> ValidateSimple{基本信息<br/>完整?}
+    
+    Validate -->|YES| Pass[✅ 场景0检查通过]
+    Validate -->|NO| Fail[❌ 场景0检查失败<br/>重新执行STEP 1-5]
+    
+    ValidateSimple -->|YES| PassSimple[✅ 场景0检查通过]
+    ValidateSimple -->|NO| Fail
+    
+    Pass --> StartTask([开始实现功能])
+    PassSimple --> StartTask
+    Fail --> Retry([重新执行场景0])
+```
+
+**完整格式模板** (有禁止项/强制项时使用):
+
+```markdown
+═══════════════════════════════════════════════════════════════
+### 🔴 场景0执行结果（项目规范确认）
+
+**项目名称**: <project_name>  
+**Profile路径**: `guidelines/profiles/<project>.md`  
+**读取状态**: ✅ 已完整读取（必须YES）
+
+---
+
+#### 📋 提取到的【禁止项】（必须列出）:
+[如果Profile中有禁止项，必须全部列出，格式如下:]
+- ❌ **禁止XXX层** - 原因: <原因> | 替代方案: <方案>
+- ❌ **禁止XXX库** - 原因: <原因> | 替代方案: <方案>
+[如果没有禁止项，输出: "- 无特定禁止项"]
+
+#### ✅ 提取到的【强制项】（必须列出）:
+[如果Profile中有强制项，必须全部列出，格式如下:]
+- ✅ **强制使用XXX** - 说明: <说明>
+- ✅ **强制XXX规范** - 说明: <说明>
+[如果没有强制项，输出: "- 使用通用规范"]
+
+#### 🔍 自我检查结果:
+1. ❓ 我是否已读取项目Profile？ → [✅ YES / ❌ NO]
+2. ❓ 我是否知道项目禁止什么？ → [✅ YES（已列出X项） / ❌ NO]
+3. ❓ 我是否会使用项目禁止的技术？ → [✅ NO / ❌ YES]
+4. ❓ 我是否优先项目规范而非通用实践？ → [✅ YES / ❌ NO]
+5. ❓ 我是否需要重新读取Profile？ → [✅ NO / ❌ YES]
+
+#### 📊 我的执行计划（基于以上规范）:
+[必须明确说明将采用的架构/技术栈/实现方式，并与禁止项对比]
+- 架构模式: <说明为什么这样选择>
+- 验证方式: <说明为什么这样选择>
+- 测试框架: <说明为什么这样选择>
+- 数据库操作: <说明为什么这样选择>
+
+#### 🎯 最终确认:
+[必须输出以下之一:]
+✅ **场景0检查通过** - 所有检查为YES，禁止项已识别，开始实现功能
+❌ **场景0检查失败** - 存在问题，需要重新执行STEP 1-5
+
+═══════════════════════════════════════════════════════════════
+```
+
+**简化格式模板** (无特殊规范时使用):
+
+```markdown
+═══════════════════════════════════════════════════════════════
+### 🔴 场景0执行结果（项目规范确认）
+
+**项目名称**: <project_name>  
+**Profile路径**: `guidelines/profiles/<project>.md`  
+**读取状态**: ✅ 已完整读取
+**规范类型**: 使用通用规范（无项目特定禁止项或强制项）
+
+#### 🎯 最终确认:
+✅ **场景0检查通过** - 使用通用规范，开始实现功能
+
+═══════════════════════════════════════════════════════════════
+```
+
+---
+
+### 完整执行示例
+
+**示例场景: chat 项目消息设置功能**
+
+```yaml
+用户: "帮我在 chat 项目实现消息设置功能"
+
+AI 必须输出:
+  ═══════════════════════════════════════════════════════════════
+  ### 🔴 场景0执行结果（项目规范确认）
+  
+  **项目名称**: chat  
+  **Profile路径**: `guidelines/profiles/chat.md`  
+  **读取状态**: ✅ 已完整读取
+  
+  ---
+  
+  #### 📋 提取到的【禁止项】:
+  - ❌ **禁止Service层** - 原因: 项目中Service层几乎都是重复的 | 替代方案: Controller + Utils模式
+  - ❌ **禁止DTO类** - 原因: 使用Joi验证即可 | 替代方案: Joi schema
+  - ❌ **禁止Repository层** - 原因: 使用utilsCrud | 替代方案: utilsCrud
+  - ❌ **禁止class-validator** - 原因: 项目统一使用Joi | 替代方案: Joi
+  - ❌ **禁止Jest** - 原因: 项目统一使用Mocha | 替代方案: Mocha
+  
+  #### ✅ 提取到的【强制项】:
+  - ✅ **强制使用Joi验证** - 说明: 所有输入必须使用Joi进行验证
+  - ✅ **强制使用Mocha测试** - 说明: 测试框架必须使用Mocha
+  - ✅ **强制中文注释** - 说明: Model/Controller/Utils中的注释必须使用中文
+  - ✅ **强制使用utilsCrud** - 说明: 数据库操作必须使用utilsCrud而非直接Mongoose
+  
+  #### 🔍 自我检查结果:
+  1. ❓ 我是否已读取项目Profile？ → ✅ YES
+  2. ❓ 我是否知道项目禁止什么？ → ✅ YES（已列出5项禁止）
+  3. ❓ 我是否会使用项目禁止的技术？ → ✅ NO
+  4. ❓ 我是否优先项目规范而非通用实践？ → ✅ YES
+  5. ❓ 我是否需要重新读取Profile？ → ✅ NO
+  
+  #### 📊 我的执行计划（基于以上规范）:
+  - 架构模式: Controller + Utils（不使用Service层，遵守禁止项1）
+  - 验证方式: Joi schema（不使用DTO/class-validator，遵守禁止项2和4）
+  - 测试框架: Mocha（不使用Jest，遵守禁止项5）
+  - 数据库操作: utilsCrud（不直接使用Mongoose，遵守强制项4）
+  - 注释语言: 中文（遵守强制项3）
+  
+  #### 🎯 最终确认:
+  ✅ **场景0检查通过** - 所有检查为YES，禁止项已识别，开始实现功能
+  
+  ═══════════════════════════════════════════════════════════════
+  
+  现在开始实现功能...
 ```
 
 ---
