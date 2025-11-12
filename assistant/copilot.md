@@ -13,9 +13,9 @@
 
 ```yaml
 第1秒: 项目识别
-  [ ] 识别项目名称（从请求/目录/路径/询问用户）
-  [ ] 确认 Profile 路径: guidelines/profiles/<project>.md
-  ❌ 如果识别失败 → 🛑 HALT → 询问用户
+         [ ] 识别项目名称（从请求/目录/路径/询问用户）
+         [ ] 确认 Profile 路径: guidelines/profiles/<project>.md
+         ❌ 如果识别失败 → 🛑 HALT → 询问用户
 
 第2秒: Profile 读取
   [ ] 完整读取 Profile 文件（不得跳过任何部分）
@@ -25,10 +25,10 @@
   ❌ 如果 Profile 不存在 → 🛑 HALT → 要求创建
 
 第3秒: 规则确认
-  [ ] 自我确认: "我知道这个项目禁止什么" ✅
+         [ ] 自我确认: "我知道这个项目禁止什么" ✅
   [ ] 自我确认: "我知道测试应该放在哪" ✅
   [ ] 自我确认: "我不会使用禁止的技术" ✅
-  ❌ 如果任何一项为空/不确定 → 🛑 HALT → 重新读取
+         ❌ 如果任何一项为空/不确定 → 🛑 HALT → 重新读取
 ```
 
 ### 🚫 绝对禁止（Absolute Forbidden）
@@ -40,6 +40,71 @@
 ❌ 跳过场景0的5个自我检查问题
 ❌ 省略场景0执行结果的输出
 ❌ 调用未在 Profile 中声明的 MCP 服务器
+```
+
+### 🔥 严格禁止删除现有代码（Critical - 违反将导致严重后果）
+
+```yaml
+❌ 绝对禁止的危险操作:
+
+1. 禁止删除现有的 import 语句
+   原因: 删除import会导致现有功能失效，影响生产环境
+   示例错误: 
+     - import selectorGroup from './selector'  ← 删除此行
+   后果: selectorGroup路由立即404，用户无法访问
+   
+2. 禁止删除现有的路由调用
+   原因: 删除路由调用等同于下线功能
+   示例错误:
+     - selectorGroup(app, _groupRouter)  ← 删除此行
+   后果: 该路由组下的所有接口立即不可用
+   
+3. 禁止删除现有的函数/方法/类
+   原因: 可能被其他模块依赖
+   后果: 编译错误、运行时错误、功能崩溃
+   
+4. 禁止删除现有的配置项
+   原因: 现有功能依赖配置
+   后果: 服务启动失败、功能不可用
+   
+5. 禁止删除现有的中间件调用
+   原因: 中间件提供认证、日志等关键功能
+   后果: 安全漏洞、功能异常
+
+✅ 正确的新增代码方式:
+  - 仅在文件末尾或指定位置添加新代码
+  - 仅添加新的import，不删除现有import
+  - 仅添加新的路由调用，不删除现有路由
+  - 如需修改，使用精确的replace而非删除重写
+  
+⚠️ 修改文件前的强制自检（100%执行）:
+  [ ] 我是否完整阅读了整个文件？
+  [ ] 我是否理解了每个import的用途？
+  [ ] 我是否理解了每个函数调用的作用？
+  [ ] 我的改动是否会删除任何现有代码？
+  [ ] 如果删除，是否有充分理由且已获用户确认？
+  [ ] 是否有其他方式避免删除现有代码？
+  
+🔍 提交前的验证方法:
+  - 使用 git diff 检查所有改动
+  - 确保没有 "- import XXX" 的删除行
+  - 确保没有 "- XXXGroup(...)" 的删除行  
+  - 确保没有 "- function XXX()" 的删除行
+  - 任何删除操作必须有明确的理由和用户确认
+  
+💀 违反后果（真实案例）:
+  案例: chat项目路由文件修改
+  错误操作: 删除了5个现有import和5个路由调用
+  后果: 
+    - selectorGroup 路由404
+    - proposalGroup 路由404
+    - proposalPoiGroup 路由404  
+    - proposalFlightGroup 路由404
+    - adviserConversationGroup 路由404
+  影响: 所有用户无法访问这5个功能模块
+  修复时间: 需要紧急回滚，影响生产环境
+  
+  教训: 添加新功能时，绝不删除现有代码！
 ```
 
 ### 💡 短期记忆提示（Memory Hint）
@@ -121,6 +186,33 @@ MCP配置: <从Profile提取，如: mongodb-monsqlize>
   - ✅ 建议: 使用其他方法或要求用户添加配置
 ```
 
+### 断点 6: 检测到删除现有代码 🔴💀（最高严重级别）
+```yaml
+触发条件: 
+  - git diff 显示有 "- import XXX" 删除行
+  - git diff 显示有 "- function XXX()" 删除行
+  - git diff 显示有 "- XXXGroup(app, ...)" 删除行
+  - 任何删除现有功能代码的操作
+
+必须执行:
+  - 🛑 立即停止所有操作
+  - 🔴 立即恢复被删除的代码
+  - ✅ 输出: "⚠️ 严重错误：检测到删除现有代码"
+  - ✅ 显示被删除的内容:
+      - 删除的 import: <列出>
+      - 删除的函数调用: <列出>
+      - 删除的代码行数: <数量>
+  - ✅ 说明影响:
+      "删除这些代码将导致XX功能立即不可用，影响所有用户"
+  - ✅ 使用 git diff 验证恢复成功
+  - ✅ 重新规划实现方式（仅添加，不删除）
+
+特殊情况（唯一允许删除的场景）:
+  - 用户明确要求删除某个功能
+  - 用户明确确认该功能已废弃
+  - 必须先获得用户明确确认后才能执行
+```
+
 ---
 
 ## 📚 结构化决策支持
@@ -147,65 +239,65 @@ MCP配置: <从Profile提取，如: mongodb-monsqlize>
 ```yaml
 项目识别:
   [ ] 已识别项目名称（chat/monSQLize/vsse/等）
-  [ ] 已确认 Profile 路径: guidelines/profiles/<project>.md
+    [ ] 已确认 Profile 路径: guidelines/profiles/<project>.md
 
 Profile 读取:
   [ ] 已完整读取 Profile 文件
-  [ ] 已提取【禁止项】（Service层/DTO/测试框架等）
-  [ ] 已提取【强制项】（Joi/Mocha/utilsCrud等）
-  [ ] 已提取【测试规范】（目录/框架/断言库/命名）
+    [ ] 已提取【禁止项】（Service层/DTO/测试框架等）
+    [ ] 已提取【强制项】（Joi/Mocha/utilsCrud等）
+    [ ] 已提取【测试规范】（目录/框架/断言库/命名）
 
 规范确认:
   [ ] 我知道项目禁止什么
-  [ ] 我知道项目强制什么
-  [ ] 我不会使用项目禁止的技术
-  [ ] 我优先项目规范而非通用实践
+    [ ] 我知道项目强制什么
+    [ ] 我不会使用项目禁止的技术
+    [ ] 我优先项目规范而非通用实践
 ```
 
 ### 🗄️ MCP 检查（涉及数据库操作时）
 ```yaml
 触发判断:
   [ ] 是否需要查询真实数据？（是 → 继续检查）
-  [ ] 仅编写代码不执行？（是 → 跳过 MCP 检查）
+    [ ] 仅编写代码不执行？（是 → 跳过 MCP 检查）
 
 MCP 配置:
   [ ] 已读取 Profile 的 "MCP 配置" 章节
-  [ ] 已确认允许的 MCP 服务器名称
-  [ ] 不调用未声明的 MCP 服务器
+    [ ] 已确认允许的 MCP 服务器名称
+    [ ] 不调用未声明的 MCP 服务器
 ```
 
 ### 🧪 测试检查（创建测试文件时）
 ```yaml
 测试规范:
   [ ] 测试目录是否符合 Profile？（优先 Profile 规范）
-  [ ] 测试框架是否符合 Profile？（Mocha/Jest/Vitest）
-  [ ] 断言库是否符合 Profile？（Chai/Node.js assert/Jest expect）
-  [ ] 文件命名是否符合 Profile？（kebab-case/snake_case）
+    [ ] 测试框架是否符合 Profile？（Mocha/Jest/Vitest）
+    [ ] 断言库是否符合 Profile？（Chai/Node.js assert/Jest expect）
+    [ ] 文件命名是否符合 Profile？（kebab-case/snake_case）
 
 自动分类:
   [ ] 功能测试 → test/unit/features/（对外 API）
-  [ ] 基础设施测试 → test/unit/infrastructure/（logger/errors/cache）
-  [ ] 工具函数测试 → test/unit/utils/（纯函数）
+    [ ] 基础设施测试 → test/unit/infrastructure/（logger/errors/cache）
+    [ ] 工具函数测试 → test/unit/utils/（纯函数）
 ```
 
 ### 📄 文档任务检查（文档修改时）
 ```yaml
 代码判断:
   [ ] 文档中是否包含代码示例？（≥3行 → 执行场景0）
-  [ ] 是否修改 examples/*.js？（是 → 执行场景0）
-  [ ] 是否修改 index.d.ts？（是 → 执行场景0）
-  [ ] 仅纯文本修改？（<3行代码 → 可跳过场景0）
+    [ ] 是否修改 examples/*.js？（是 → 执行场景0）
+    [ ] 是否修改 index.d.ts？（是 → 执行场景0）
+    [ ] 仅纯文本修改？（<3行代码 → 可跳过场景0）
 ```
 
 ### ✅ 输出确认
 ```yaml
 场景0输出:
   [ ] 已输出场景0执行结果（包含禁止项/强制项）
-  [ ] 输出格式：完整版（有限制）或简化版（无限制）
+    [ ] 输出格式：完整版（有限制）或简化版（无限制）
 
 实时检查:
   [ ] 每个文件创建/修改后立即输出检查结果
-  [ ] 单文件独立输出 or 批量汇总输出（>3个文件）
+    [ ] 单文件独立输出 or 批量汇总输出（>3个文件）
 ```
 
 ---
@@ -361,12 +453,12 @@ STEP 1: 任务判断
   ELSE: 跳过 MCP 检查
 
 STEP 2: Profile 读取
-  - 读取: guidelines/profiles/<project>.md
-  - 定位: "## MCP 配置" 章节
-  - 如果不存在 → 🛑 断点 5 → 拒绝调用
+          - 读取: guidelines/profiles/<project>.md
+          - 定位: "## MCP 配置" 章节
+          - 如果不存在 → 🛑 断点 5 → 拒绝调用
 
 STEP 3: 配置提取
-  从 MCP 配置章节提取:
+      从 MCP 配置章节提取:
   [ ] 允许的 MCP 服务器: <mcp-server-name>
   [ ] 数据库名称: <database-name>
   [ ] 用途说明: <purpose>
@@ -395,8 +487,8 @@ AI 执行:
   1. 识别项目: monSQLize ✅
   2. 读取 Profile: guidelines/profiles/monSQLize.md ✅
   3. 找到 MCP 配置:
-     - 允许的服务器: mongodb-monsqlize ✅
-     - 数据库: monsqlize ✅
+    - 允许的服务器: mongodb-monsqlize ✅
+    - 数据库: monsqlize ✅
   4. 验证: mongodb-monsqlize 在允许列表 ✅
   5. 调用: mongodb-monsqlize ✅
   6. 返回结果 ✅
@@ -476,7 +568,7 @@ THEN:
   - 🔴 必须遵守项目规范
   - ❌ 禁止使用通用最佳实践（即使你认为是"好实践"）
   - ❌ 禁止自作主张"优化"架构
-  
+
 理由: 每个项目有自己的历史架构和团队约定，强行改变会破坏一致性
 
 示例:
@@ -530,38 +622,38 @@ flowchart TD
 ```yaml
 🔴 必须执行 MCP 检查的场景:
   1. 用户明确要求查询/分析/修改数据库数据
-     - "查询 XX 集合"
-     - "统计 XX 数量"
-     - "分析 XX 数据"
-     - "最近有多少 XX？"
-  
+  - "查询 XX 集合"
+  - "统计 XX 数量"
+  - "分析 XX 数据"
+  - "最近有多少 XX？"
+
   2. 问题诊断需要查看实际数据
-     - "为什么这个功能不工作？" + 需要查看数据状态
-     - "用户反馈 XX 错误" + 需要查询相关记录
-     - "这个字段有什么值？" + 需要查看集合结构
-  
+  - "为什么这个功能不工作？" + 需要查看数据状态
+  - "用户反馈 XX 错误" + 需要查询相关记录
+  - "这个字段有什么值？" + 需要查看集合结构
+
   3. 数据探索与分析
-     - "这个项目有哪些集合？"
-     - "用户表的结构是什么？"
-     - "数据分布情况如何？"
+  - "这个项目有哪些集合？"
+  - "用户表的结构是什么？"
+  - "数据分布情况如何？"
 
 ✅ 不需要执行 MCP 检查的场景:
   1. 编写操作数据库的代码（但不执行查询）
-     - "帮我写一个查询用户的函数" → 仅写代码，不执行 MCP
-     - "创建 User Model" → 仅定义 schema，不执行 MCP
-     - "实现分页查询功能" → 仅写代码，不执行 MCP
-  
+  - "帮我写一个查询用户的函数" → 仅写代码，不执行 MCP
+  - "创建 User Model" → 仅定义 schema，不执行 MCP
+  - "实现分页查询功能" → 仅写代码，不执行 MCP
+
   2. 讨论数据库设计（纯理论）
-     - "应该用什么数据结构存储？" → 架构讨论，不执行 MCP
-     - "索引应该怎么建？" → 设计讨论，不执行 MCP
-  
+  - "应该用什么数据结构存储？" → 架构讨论，不执行 MCP
+  - "索引应该怎么建？" → 设计讨论，不执行 MCP
+
   3. 文档/注释编写
-     - "更新数据库文档" → 纯文档任务，不执行 MCP
+  - "更新数据库文档" → 纯文档任务，不执行 MCP
 
 判断规则:
   IF: 需要获取真实数据（查询/统计/分析）
   THEN: 触发 MCP 检查
-  
+
   IF: 仅编写代码或讨论设计
   THEN: 不触发 MCP 检查
 ```
@@ -635,24 +727,24 @@ AI 执行:
 🔴 【第一优先级】在写任何代码前必须执行:
 
 STEP 1: 识别项目名称
-  [ ] 优先级1: 用户请求中明确提到（如"在 chat 项目中..."）
+          [ ] 优先级1: 用户请求中明确提到（如"在 chat 项目中..."）
   [ ] 优先级2: 当前工作目录（D:\Project\<project_name>\*）
   [ ] 优先级3: 正在编辑的文件路径
   [ ] 优先级4: 询问用户选择
   [ ] 验证 Profile 文件存在: guidelines/profiles/<project>.md
-  
-  详见: 场景0详细实施指南 - STEP 1
+
+      详见: 场景0详细实施指南 - STEP 1
 
 STEP 2: 读取项目 Profile
   [ ] 读取 guidelines/profiles/<project>.md（完整通读）
   [ ] 定位关键章节：禁止/强制/测试框架/MCP配置/架构规范
   [ ] 智能提取：禁止项、强制项、测试规范、其他约束
   [ ] 构建规范清单（记录到短期记忆）
-  
+
   详见: 场景0详细实施指南 - STEP 2
 
 STEP 3: 提取强制规范
-  [ ] 架构层次: Service层/Repository层/DTO类？
+          [ ] 架构层次: Service层/Repository层/DTO类？
   [ ] 验证方式: Joi/class-validator/其他？
   [ ] 测试框架: Mocha/Jest/其他？（🔴 强制）
   [ ] 测试目录: test/unit/features/ 或其他？（🔴 强制）
@@ -660,13 +752,13 @@ STEP 3: 提取强制规范
   [ ] 数据库操作: utilsCrud/Mongoose/TypeORM？
   [ ] 注释语言: 中文/英文？
   [ ] 其他特定要求
-  
-  详见: 场景0详细实施指南 - STEP 3
+
+      详见: 场景0详细实施指南 - STEP 3
 
 STEP 4: 冲突检查
   [ ] IF Profile规范 与 通用最佳实践 冲突
-      THEN 🔴 无条件遵守 Profile 规范
-  
+  THEN 🔴 无条件遵守 Profile 规范
+
   详见: 场景0详细实施指南 - STEP 4
 
 STEP 5: 自我检查（5个核心问题）
@@ -675,7 +767,7 @@ STEP 5: 自我检查（5个核心问题）
   [ ] 3. 我是否会使用项目禁止的技术？ → 必须 NO
   [ ] 4. 我是否优先项目规范而非通用实践？ → 必须 YES
   [ ] 5. 我是否需要重新读取Profile？ → 如前4个有问题，必须 YES
-  
+
   详见: 场景0详细实施指南 - STEP 5
 
 STEP 6: 强制输出验证
@@ -686,7 +778,7 @@ STEP 6: 强制输出验证
   [ ] 5个自我检查问题的答案
   [ ] 执行计划（架构/验证/测试/数据库）
   [ ] 最终确认（✅通过 或 ❌失败）
-  
+
   详见: 场景0详细实施指南 - STEP 6（完整输出模板）
 
 禁止行为 ❌:
@@ -736,18 +828,18 @@ THEN:
 
 代码行数计算:
   - 单行: `const x = 1;` → 1 行（不触发）
-  - 两行: 
+  - 两行:
     ```javascript
     const x = 1;
     const y = 2;
     ```
     → 2 行（不触发）
-  - 三行及以上: 
+  - 三行及以上:
     ```javascript
     const user = {
-      name: 'Alice',
-      age: 30
-    };
+    name: 'Alice',
+    age: 30
+  };
     ```
     → 4 行（触发场景 0）
 ```
@@ -774,7 +866,7 @@ THEN:
 
 ### 场景 0.5: 实时检查（边写边检，智能触发）
 
-**触发条件** (满足任一即触发): 
+**触发条件** (满足任一即触发):
 - 场景0通过后，开始编写代码
 - 完成一个文件的创建（使用 create_file 工具）
 - 完成一个文件的修改（使用 replace_string_in_file 工具）
@@ -783,23 +875,23 @@ THEN:
 ```yaml
 每创建/修改一个文件后，必须立即执行以下检查:
 
-🔴 【实时违规检测】- 必须输出检查结果
+  🔴 【实时违规检测】- 必须输出检查结果
 
 检查项1: 架构层次违规
   IF: Profile禁止Service层 AND 文件路径包含 "service" 或 类名包含 "Service"
-  THEN: 
+  THEN:
     ❌ 输出: "⚠️ 违规警告: 检测到Service层 `<文件路径>`（Profile禁止）"
     ❌ 立即删除该文件
     ❌ 重构为 Utils 模式
     ✅ 输出: "✅ 已修正: 重构为 `<新文件路径>`"
-  
+
   IF: Profile禁止DTO AND 文件路径包含 "dto" 或 类名包含 "Dto"
   THEN:
     ❌ 输出: "⚠️ 违规警告: 检测到DTO类 `<文件路径>`（Profile禁止）"
     ❌ 立即删除该文件
     ❌ 改用 Joi schema
     ✅ 输出: "✅ 已修正: 使用Joi schema替代"
-  
+
   IF: Profile禁止Repository AND 文件路径包含 "repository"
   THEN:
     ❌ 输出: "⚠️ 违规警告: 检测到Repository层（Profile禁止）"
@@ -811,13 +903,13 @@ THEN:
     ❌ 输出: "⚠️ 违规警告: 使用了class-validator（Profile禁止）"
     ❌ 立即替换为 Joi
     ✅ 输出: "✅ 已修正: 改用Joi验证"
-  
+
   IF: Profile强制Mocha AND 文件中使用了 "jest" 或 "describe.skip"(Jest语法)
   THEN:
     ❌ 输出: "⚠️ 违规警告: 使用了Jest（Profile禁止）"
     ❌ 立即替换为 Mocha
     ✅ 输出: "✅ 已修正: 改用Mocha测试"
-  
+
   IF: Profile强制utilsCrud AND 文件中直接使用了 "Model.find()" "Model.create()" 等
   THEN:
     ❌ 输出: "⚠️ 违规警告: 直接使用Mongoose方法（应使用utilsCrud）"
@@ -829,7 +921,7 @@ THEN:
     ❌ 输出: "⚠️ 违规警告: 发现英文注释（Profile要求中文）"
     ❌ 立即翻译为中文
     ✅ 输出: "✅ 已修正: 已翻译为中文注释"
-  
+
   IF: Profile要求特定命名规范 AND 文件命名不符合
   THEN:
     ❌ 输出: "⚠️ 违规警告: 文件命名不符合规范"
@@ -841,7 +933,7 @@ THEN:
     ❌ 输出: "⚠️ 违规警告: 文件命名使用了错误格式 `<文件名>`"
     ❌ 立即重命名为 snake_case 格式
     ✅ 输出: "✅ 已修正: 重命名为 `<新文件名>`"
-  
+
   示例:
     - ❌ `user-preference.ts` → ✅ `user_preference.ts` (kebab-case → snake_case)
     - ❌ `userPreference.ts` → ✅ `user_preference.ts` (camelCase → snake_case)
@@ -853,7 +945,7 @@ THEN:
     ❌ 输出: "⚠️ 违规警告: 创建了Controller但未创建接口文档"
     ❌ 立即创建接口文档: `docs/api/<resource_name>.md`
     ✅ 输出: "✅ 已修正: 已创建接口文档 `<文档路径>`"
-  
+
   IF: 修改了Controller文件 AND 接口文档未同步更新
   THEN:
     ⚠️ 输出: "⚠️ 提示: Controller已修改，请确认接口文档是否需要更新"
@@ -862,78 +954,78 @@ THEN:
 
 **输出决策流程**:
 
-```mermaid
-flowchart TD
-    FileCreated([文件创建/修改完成]) --> CountFiles{连续创建<br/>文件数量?}
-    
-    CountFiles -->|≤3 个文件| Single[单文件模式]
-    CountFiles -->|>3 个文件| Batch[批量模式]
-    
-    Single --> CheckSingle[检查单个文件]
-    CheckSingle --> HasViolation1{发现违规?}
-    
-    HasViolation1 -->|YES| FixSingle[立即自动修正]
-    HasViolation1 -->|NO| OutputPass1[✅ 该文件无违规项]
-    
-    FixSingle --> OutputFixed1[❌ 已自动修正 X 处违规]
-    
-    Batch --> CheckBatch[检查所有文件]
-    CheckBatch --> HasViolation2{发现违规?}
-    
-    HasViolation2 -->|YES| FixBatch[批量自动修正]
-    HasViolation2 -->|NO| OutputPass2[✅ 所有文件均符合规范]
-    
-    FixBatch --> OutputFixed2[❌ 已修正 N2 个文件<br/>违规清单...]
-    
-    OutputPass1 --> NextFile{还有文件?}
-    OutputFixed1 --> NextFile
-    
-    NextFile -->|YES| Single
-    NextFile -->|NO| Complete([检查完成])
-    
-    OutputPass2 --> Complete
-    OutputFixed2 --> Complete
+  ```mermaid
+  flowchart TD
+  FileCreated([文件创建/修改完成]) --> CountFiles{连续创建<br/>文件数量?}
+
+  CountFiles -->|≤3 个文件| Single[单文件模式]
+  CountFiles -->|>3 个文件| Batch[批量模式]
+
+  Single --> CheckSingle[检查单个文件]
+  CheckSingle --> HasViolation1{发现违规?}
+
+  HasViolation1 -->|YES| FixSingle[立即自动修正]
+  HasViolation1 -->|NO| OutputPass1[✅ 该文件无违规项]
+
+  FixSingle --> OutputFixed1[❌ 已自动修正 X 处违规]
+
+  Batch --> CheckBatch[检查所有文件]
+  CheckBatch --> HasViolation2{发现违规?}
+
+  HasViolation2 -->|YES| FixBatch[批量自动修正]
+  HasViolation2 -->|NO| OutputPass2[✅ 所有文件均符合规范]
+
+  FixBatch --> OutputFixed2[❌ 已修正 N2 个文件<br/>违规清单...]
+
+  OutputPass1 --> NextFile{还有文件?}
+  OutputFixed1 --> NextFile
+
+  NextFile -->|YES| Single
+  NextFile -->|NO| Complete([检查完成])
+
+  OutputPass2 --> Complete
+  OutputFixed2 --> Complete
 ```
 
 IF: 连续创建 ≤ 3 个文件
 THEN: 每个文件独立输出检查结果:
-  ✅ **实时检查**: `<文件路径>`
-    - 架构层次: [✅ 符合 / ❌ 违规: <说明>]
-    - 技术栈: [✅ 符合 / ❌ 违规: <说明>]
-    - 编码规范: [✅ 符合 / ❌ 违规: <说明>]
-    - 文件命名: [✅ 符合 / ❌ 违规: <说明>]
-    - 接口文档: [✅ 已创建 / ⚠️ 需创建 / - 不适用]
-    [如果全部符合] → ✅ 该文件无违规项
-    [如果有违规] → ❌ 已自动修正 <X> 处违规
+✅ **实时检查**: `<文件路径>`
+- 架构层次: [✅ 符合 / ❌ 违规: <说明>]
+- 技术栈: [✅ 符合 / ❌ 违规: <说明>]
+- 编码规范: [✅ 符合 / ❌ 违规: <说明>]
+- 文件命名: [✅ 符合 / ❌ 违规: <说明>]
+- 接口文档: [✅ 已创建 / ⚠️ 需创建 / - 不适用]
+[如果全部符合] → ✅ 该文件无违规项
+[如果有违规] → ❌ 已自动修正 <X> 处违规
 
 IF: 连续创建 > 3 个文件（批量创建）
 THEN: 批量输出检查结果（汇总格式）:
-  ✅ **批量实时检查**: 已创建/修改 <N> 个文件
-    - 符合规范: <N1> 个
-    - 发现违规: <N2> 个
-    [如果有违规] → 违规文件清单:
-      1. `<文件路径>` - 违规项: <说明> → ✅ 已修正
-      2. `<文件路径>` - 违规项: <说明> → ✅ 已修正
-    [如果无违规] → ✅ 所有文件均符合项目规范
+✅ **批量实时检查**: 已创建/修改 <N> 个文件
+- 符合规范: <N1> 个
+- 发现违规: <N2> 个
+[如果有违规] → 违规文件清单:
+1. `<文件路径>` - 违规项: <说明> → ✅ 已修正
+2. `<文件路径>` - 违规项: <说明> → ✅ 已修正
+[如果无违规] → ✅ 所有文件均符合项目规范
 
 示例输出（单文件）:
-  ✅ **实时检查**: `app/controller/home/user_preference.ts`
-    - 架构层次: ✅ 符合（Controller模式）
-    - 技术栈: ✅ 符合（使用Joi验证）
-    - 编码规范: ✅ 符合（中文注释）
-    - 文件命名: ✅ 符合（snake_case）
-    - 接口文档: ✅ 已创建 `docs/api/user_preference.md`
-    ✅ 该文件无违规项
-  
-  ❌ **实时检查**: `app/controller/home/user-preference.ts`
-    - 架构层次: ✅ 符合（Controller模式）
-    - 技术栈: ✅ 符合（使用Joi验证）
-    - 编码规范: ✅ 符合（中文注释）
-    - 文件命名: ❌ 违规: 使用了kebab-case（应使用snake_case）
-    - 接口文档: ❌ 未创建
-    - ✅ 已修正: 
-      1. 重命名为 `user_preference.ts`
-      2. 已创建接口文档 `docs/api/user_preference.md`
+✅ **实时检查**: `app/controller/home/user_preference.ts`
+- 架构层次: ✅ 符合（Controller模式）
+- 技术栈: ✅ 符合（使用Joi验证）
+- 编码规范: ✅ 符合（中文注释）
+- 文件命名: ✅ 符合（snake_case）
+- 接口文档: ✅ 已创建 `docs/api/user_preference.md`
+✅ 该文件无违规项
+
+❌ **实时检查**: `app/controller/home/user-preference.ts`
+- 架构层次: ✅ 符合（Controller模式）
+- 技术栈: ✅ 符合（使用Joi验证）
+- 编码规范: ✅ 符合（中文注释）
+- 文件命名: ❌ 违规: 使用了kebab-case（应使用snake_case）
+- 接口文档: ❌ 未创建
+- ✅ 已修正:
+1. 重命名为 `user_preference.ts`
+2. 已创建接口文档 `docs/api/user_preference.md`
 ```
 
 **执行规则**:
@@ -969,7 +1061,7 @@ THEN 执行:
   3. 🔴 [强制] 更新 CHANGELOG.md [Unreleased] → 读取 guidelines/guidelines/v2.md (第5章)
   4. 🟠 [必须] 更新 README.md (如果API变更) → 读取 guidelines/guidelines/v2.md (第6章)
   5. 🟡 [推荐] 更新类型声明文件 (如 index.d.ts)
-  
+
 BEFORE 提交:
   - 运行: npm test (或项目定义的测试命令)
   - 验证: examples/ 中的示例可独立运行
@@ -985,11 +1077,11 @@ BEFORE 提交:
 IF: 用户描述问题或错误
 THEN 执行:
   1. � [强制] 引导用户填写 Bug 分析模板
-     → 读取 guidelines/templates/bug-fix-analysis-template.md
+  → 读取 guidelines/templates/bug-fix-analysis-template.md
   2. 🔴 [强制] 记录到: <项目>/bug-analysis/YYYY-MM-DD-问题描述.md
   3. 🟠 [必须] 添加回归测试用例
   4. 🟠 [必须] 更新 CHANGELOG.md (类型: Fixed)
-  
+
 模板必填项:
   - 根本原因 (Why)
   - 影响对比 (修复前后)
@@ -1006,11 +1098,11 @@ THEN 执行:
 IF: 编辑行数 > 100 OR 删除整个章节/附录
 THEN 执行:
   1. 🔴 [强制] 使用 PowerShell 脚本而非 replace_string_in_file
-     → 读取 guidelines/guidelines/v2.md (第20章)
+  → 读取 guidelines/guidelines/v2.md (第20章)
   2. 🔴 [强制] 先备份文件: Copy-Item file.md file.md.backup
   3. 🟠 [必须] 使用 UTF-8 无BOM 编码
   4. 🟡 [推荐] 分步验证结果
-  
+
 禁止操作:
   - ❌ 使用 multi_edit 工具删除 >100行
   - ❌ 未备份时执行修改
@@ -1026,12 +1118,12 @@ THEN 执行:
 IF: 审查包含日志输出/错误处理/API调用
 THEN 检查:
   1. 🔴 [强制] 日志中无敏感信息 (密码/token/连接串)
-     → 读取 guidelines/guidelines/v2.md (第10章)
+  → 读取 guidelines/guidelines/v2.md (第10章)
   2. 🔴 [强制] 输入校验完整 (类型/必填/范围)
-     → 读取 guidelines/guidelines/v2.md (第9章)
+  → 读取 guidelines/guidelines/v2.md (第9章)
   3. 🟠 [必须] 错误信息可行动且去敏
   4. 🟡 [推荐] 使用查询形状而非具体值
-  
+
 敏感信息正则:
   - API Keys: /(sk|pk|api|token)[-_]?[a-zA-Z0-9]{20,}/
   - 密码: /password|passwd|pwd|secret|credential/i
@@ -1070,13 +1162,13 @@ IF 仅内部重构/性能优化 (不改API):
 IF: 主动性改进/优化（非Bug响应）
 THEN 执行:
   1. 🟡 [推荐] 创建分析报告: <项目>/analysis-reports/YYYY-MM-DD-主题.md
-     → 读取 guidelines/guidelines/v2.md (第19.1章)
+    → 读取 guidelines/guidelines/v2.md (第19.1章)
   2. 🟡 [推荐] 填写分析内容:
-     - 背景与动机
-     - 方案分析
-     - 实施步骤
-     - 验证方法
-     - 结果总结
+    - 背景与动机
+    - 方案分析
+    - 实施步骤
+    - 验证方法
+    - 结果总结
   3. 🟠 [必须] 实施改进后更新 CHANGELOG.md
   4. 🟡 [推荐] 保留报告（永久保留，便于追溯）
 
@@ -1099,22 +1191,22 @@ THEN 执行:
 **判断标准**（满足任一即触发）:
 ```yaml
 1. 🔴 明确提及数据查询:
-   - "查询 trips 集合"
-   - "统计用户数量"
-   - "分析订单数据"
-   - "最近有多少XXX？"
-   
+  - "查询 trips 集合"
+  - "统计用户数量"
+  - "分析订单数据"
+  - "最近有多少XXX？"
+
 2. 🟠 问题诊断需要数据支持:
-   - "为什么这个功能不工作了？" → 需要查看实际数据状态
-   - "用户反馈XX错误" → 需要查询相关记录
-   - "这个字段有什么值？" → 需要查看集合结构
-   - "数据是否正确？" → 需要验证数据内容
-   
+  - "为什么这个功能不工作了？" → 需要查看实际数据状态
+  - "用户反馈XX错误" → 需要查询相关记录
+  - "这个字段有什么值？" → 需要查看集合结构
+  - "数据是否正确？" → 需要验证数据内容
+
 3. 🟡 数据探索与分析:
-   - "这个项目有哪些集合？"
-   - "用户表的结构是什么？"
-   - "数据分布情况如何？"
-   - "有多少条记录？"
+  - "这个项目有哪些集合？"
+  - "用户表的结构是什么？"
+  - "数据分布情况如何？"
+  - "有多少条记录？"
 ```
 
 **强制执行流程**:
@@ -1128,13 +1220,13 @@ THEN 执行:
   - 读取 guidelines/profiles/<project>.md
   - 定位到 "MCP 配置" 章节
   - 检查是否配置了数据库访问
-  
+
 步骤3: 验证权限与配置 🔴
   IF: 未找到 MCP 配置章节
     → 提示: "该项目未配置 MCP 服务器，无法执行数据库查询"
     → 询问: "是否需要帮助配置数据库访问？"
     → 终止流程
-    
+
   IF: 配置了 MCP
     → 记录允许的 MCP 服务器名称（如 mongodb-chat）
     → 记录数据库名称
@@ -1142,43 +1234,43 @@ THEN 执行:
     → 继续执行
 
 步骤4: 建立数据库连接 🔴
-  - 调用对应的 MCP 连接工具
-  - 示例: mcp_mongodb-chat_connect (如需要)
-  - 或直接使用已连接的实例
-  - 验证连接成功
+         - 调用对应的 MCP 连接工具
+         - 示例: mcp_mongodb-chat_connect (如需要)
+         - 或直接使用已连接的实例
+         - 验证连接成功
 
 步骤5: 信息收集（按需执行） 🟠
   IF: 用户询问"有哪些数据库/集合"
     → list-databases / list-collections
-  
+
   IF: 用户询问"集合结构/字段"
     → collection-schema
     → collection-indexes
-  
+
   IF: 用户询问"数据量/统计"
     → count
-  
+
   IF: 需要查看具体数据
     → 继续步骤6
 
 步骤6: 执行查询操作 🟠
-  - 根据用户问题构建查询条件
-  - 选择合适的方法: find/findOne/aggregate/count/explain
-  - 🔴 默认限制返回数量:
-    * limit: 10 (除非用户明确要求更多)
-    * 最大不超过 100 条（防止 token 溢出）
-  - 🔴 使用合理的查询选项
-  - 🔴 过滤敏感字段（参考 Profile 中的敏感字段列表）
+         - 根据用户问题构建查询条件
+         - 选择合适的方法: find/findOne/aggregate/count/explain
+         - 🔴 默认限制返回数量:
+           * limit: 10 (除非用户明确要求更多)
+           * 最大不超过 100 条（防止 token 溢出）
+         - 🔴 使用合理的查询选项
+         - 🔴 过滤敏感字段（参考 Profile 中的敏感字段列表）
 
 步骤7: 结果整理与输出 🔴
-  - 将原始 JSON 数据转化为易读格式（表格/列表）
-  - 添加数据上下文说明:
-    * 数据来源（数据库.集合）
-    * 查询条件
-    * 返回数量
-  - 提取关键发现和见解
-  - 提供进一步分析建议
-  - 使用统一的响应模板（见下方）
+         - 将原始 JSON 数据转化为易读格式（表格/列表）
+         - 添加数据上下文说明:
+         * 数据来源（数据库.集合）
+         * 查询条件
+         * 返回数量
+         - 提取关键发现和见解
+         - 提供进一步分析建议
+         - 使用统一的响应模板（见下方）
 ```
 
 **安全规则** 🔴:
@@ -1189,7 +1281,7 @@ THEN 执行:
   - ✅ 不返回敏感字段（password/token/secret/api_key）
   - ✅ 查询前向用户说明将执行的操作
   - ✅ 记录查询日志（数据库、集合、条件）
-  
+
 禁止行为:
   - ❌ 未读取 Profile 就调用数据库
   - ❌ 执行写入/更新/删除操作（除非用户明确要求且 Profile 允许）
@@ -1376,23 +1468,23 @@ THEN 按优先级执行验证:
 ### 阶段 0: 项目规范确认 (最高优先级) 🔴
 ```yaml
 [ ] 🔴 读取项目 Profile: guidelines/profiles/<project>.md (完整通读)
-[ ] 🔴 提取架构禁止项:
-    [ ] 是否禁止 Service 层？记录: ___________
-    [ ] 是否禁止 Repository 层？记录: ___________
-    [ ] 是否禁止 DTO 类？记录: ___________
-[ ] 🔴 提取技术栈要求:
-    [ ] 验证方式: Joi / class-validator / 其他？记录: ___________
-    [ ] 测试框架: Mocha / Jest / 其他？记录: ___________
-    [ ] 数据库操作: utilsCrud / 直接Mongoose / 其他？记录: ___________
-[ ] 🔴 提取编码规范:
-    [ ] 注释语言: 中文 / 英文？记录: ___________
-    [ ] 文件命名: kebab-case / camelCase？记录: ___________
-[ ] 🔴 冲突检查:
-    [ ] 项目规范 vs 通用最佳实践，是否有冲突？
-    [ ] 如有冲突，已确认优先项目规范？
-[ ] 🔴 自我确认:
-    [ ] 我是否会使用项目禁止的技术？必须 NO
-    [ ] 我是否优先项目规范而非个人习惯？必须 YES
+  [ ] 🔴 提取架构禁止项:
+      [ ] 是否禁止 Service 层？记录: ___________
+      [ ] 是否禁止 Repository 层？记录: ___________
+      [ ] 是否禁止 DTO 类？记录: ___________
+  [ ] 🔴 提取技术栈要求:
+      [ ] 验证方式: Joi / class-validator / 其他？记录: ___________
+      [ ] 测试框架: Mocha / Jest / 其他？记录: ___________
+      [ ] 数据库操作: utilsCrud / 直接Mongoose / 其他？记录: ___________
+  [ ] 🔴 提取编码规范:
+      [ ] 注释语言: 中文 / 英文？记录: ___________
+      [ ] 文件命名: kebab-case / camelCase？记录: ___________
+  [ ] 🔴 冲突检查:
+      [ ] 项目规范 vs 通用最佳实践，是否有冲突？
+        [ ] 如有冲突，已确认优先项目规范？
+  [ ] 🔴 自我确认:
+      [ ] 我是否会使用项目禁止的技术？必须 NO
+        [ ] 我是否优先项目规范而非个人习惯？必须 YES
 
 ⚠️ 警告: 如果此阶段任何一项为空或不确定，立即停止，重新读取 Profile
 ```
@@ -1400,67 +1492,67 @@ THEN 按优先级执行验证:
 ### 阶段 1: 任务开始前 (信息收集)
 ```yaml
 [ ] 读取项目 Profile: guidelines/profiles/<project>.md
-[ ] 确认项目类型: Node.js / Python / Go / Java / Rust
-[ ] 确认测试命令: npm test / pytest / go test / mvn test / cargo test
-[ ] 确认覆盖率标准: 默认≥60%, 核心API≥70% (Profile可覆盖)
-[ ] 识别场景类型: 功能/Bug/重构/文档/性能
+  [ ] 确认项目类型: Node.js / Python / Go / Java / Rust
+  [ ] 确认测试命令: npm test / pytest / go test / mvn test / cargo test
+  [ ] 确认覆盖率标准: 默认≥60%, 核心API≥70% (Profile可覆盖)
+  [ ] 识别场景类型: 功能/Bug/重构/文档/性能
 ```
 
 ### 阶段 2: 代码修改时 (强制检查)
 ```yaml
 [ ] 🔴 遵循编码风格: 4空格/LF/UTF-8/行宽≤100
-[ ] 🔴 添加输入校验: 类型/必填/范围
-[ ] 🔴 日志去敏: 无密码/token/连接串
-[ ] 🔴 错误处理: 可行动的错误信息 + cause
-[ ] 🟠 文件命名: kebab-case
+  [ ] 🔴 添加输入校验: 类型/必填/范围
+  [ ] 🔴 日志去敏: 无密码/token/连接串
+  [ ] 🔴 错误处理: 可行动的错误信息 + cause
+  [ ] 🟠 文件命名: kebab-case
 ```
 
 ### 阶段 3: 测试与示例 (强制检查)
 ```yaml
 [ ] 🔴 添加测试到 test/<功能>.test.js
-    - 正常路径 (主要场景)
-    - 异常路径 (非法输入/边界)
-    - 边界用例 (空值/最小最大/并发/超时)
-    
-    测试目录结构:
-    - test/unit/features/        # 功能性测试（业务功能）
-    - test/unit/infrastructure/  # 基础设施测试（logger/errors/connection）
-    - test/unit/utils/           # 工具函数测试（纯函数）
-    
-[ ] 🔴 添加示例到 examples/<功能>.examples.js
-    - 可独立运行
-    - 详细注释 (功能/参数/返回值/预期行为)
-    - 使用占位配置 (不含真实凭据)
-[ ] 🟠 运行测试: npm test
-[ ] 🟠 运行示例: node examples/<功能>.examples.js
+  - 正常路径 (主要场景)
+  - 异常路径 (非法输入/边界)
+  - 边界用例 (空值/最小最大/并发/超时)
+
+      测试目录结构:
+        - test/unit/features/        # 功能性测试（业务功能）
+        - test/unit/infrastructure/  # 基础设施测试（logger/errors/connection）
+        - test/unit/utils/           # 工具函数测试（纯函数）
+
+  [ ] 🔴 添加示例到 examples/<功能>.examples.js
+  - 可独立运行
+  - 详细注释 (功能/参数/返回值/预期行为)
+  - 使用占位配置 (不含真实凭据)
+  [ ] 🟠 运行测试: npm test
+  [ ] 🟠 运行示例: node examples/<功能>.examples.js
 ```
 
 ### 阶段 4: 文档更新 (强制检查)
 ```yaml
 [ ] 🔴 更新 CHANGELOG.md [Unreleased]
-    - 分类: Added/Changed/Fixed/Deprecated/Removed
-    - 格式: - [类型] 简短描述
-[ ] 🟠 更新 README.md (如果API变更)
-    - 功能说明
-    - API参数/返回值
-    - 示例引用
-    - 注意事项
-[ ] 🟡 更新 STATUS.md (如果状态变化)
-    - 计划中 → 进行中 → 已实现
-[ ] 🟡 更新类型声明 (index.d.ts)
-    - 参数类型
-    - 返回类型
-    - JSDoc 中文注释
+  - 分类: Added/Changed/Fixed/Deprecated/Removed
+- 格式: - [类型] 简短描述
+  [ ] 🟠 更新 README.md (如果API变更)
+  - 功能说明
+  - API参数/返回值
+  - 示例引用
+  - 注意事项
+  [ ] 🟡 更新 STATUS.md (如果状态变化)
+  - 计划中 → 进行中 → 已实现
+  [ ] 🟡 更新类型声明 (index.d.ts)
+  - 参数类型
+  - 返回类型
+  - JSDoc 中文注释
 ```
 
 ### 阶段 5: 提交前验证 (强制检查)
 ```yaml
 [ ] 🔴 测试全部通过
-[ ] 🔴 示例可运行且输出正确
-[ ] 🔴 无敏感信息 (日志/注释/示例)
-[ ] 🔴 文档与代码一致 (API签名/参数/返回值)
-[ ] 🟠 运行 lint (如果项目有)
-[ ] 🟡 检查类型声明 (tsd/dtslint)
+  [ ] 🔴 示例可运行且输出正确
+  [ ] 🔴 无敏感信息 (日志/注释/示例)
+  [ ] 🔴 文档与代码一致 (API签名/参数/返回值)
+  [ ] 🟠 运行 lint (如果项目有)
+  [ ] 🟡 检查类型声明 (tsd/dtslint)
 ```
 
 ---
@@ -1548,20 +1640,20 @@ THEN 按优先级执行验证:
 2. 读取Profile: guidelines/profiles/monSQLize.md
 3. 读取规范: guidelines/guidelines/v2.md
 4. 执行任务:
-   [代码] 创建 lib/mongodb/find-page.js
-   [测试] 创建 test/findPage.test.js
-          - ✅ 正常分页测试
-          - ✅ 边界条件测试（limit=0, limit=1000）
-          - ✅ 空结果测试
-   [示例] 创建 examples/findPage.examples.js
-          - ✅ 可独立运行
-          - ✅ 详细注释
-   [文档] 更新 CHANGELOG.md [Unreleased]
-          更新 README.md API说明
+  [代码] 创建 lib/mongodb/find-page.js
+    [测试] 创建 test/findPage.test.js
+    - ✅ 正常分页测试
+    - ✅ 边界条件测试（limit=0, limit=1000）
+    - ✅ 空结果测试
+    [示例] 创建 examples/findPage.examples.js
+    - ✅ 可独立运行
+    - ✅ 详细注释
+    [文档] 更新 CHANGELOG.md [Unreleased]
+    更新 README.md API说明
 5. 验证:
-   - ✅ npm test 全部通过
-   - ✅ node examples/findPage.examples.js 运行成功
-   - ✅ 无敏感信息泄露
+  - ✅ npm test 全部通过
+  - ✅ node examples/findPage.examples.js 运行成功
+  - ✅ 无敏感信息泄露
 6. 提交: PR包含完整四要素
 ```
 
@@ -1577,9 +1669,9 @@ THEN 按优先级执行验证:
 ```yaml
 1. 识别场景: 场景B - Bug修复
 2. 引导填写: Bug分析模板
-   - 根本原因: 连接未正确释放
-   - 影响对比: 并发>50时连接池耗尽 vs 正常释放
-   - 修复方案: 添加 finally 块确保释放
+               - 根本原因: 连接未正确释放
+               - 影响对比: 并发>50时连接池耗尽 vs 正常释放
+               - 修复方案: 添加 finally 块确保释放
 3. 记录分析: monSQLize/bug-analysis/2025-10-30-connection-leak.md
 4. 实施修复: 修改 lib/connect.js
 5. 添加测试: test/connection.test.js (并发测试)
@@ -1601,14 +1693,14 @@ THEN 按优先级执行验证:
 2. 检查条件: README.md = 841行 > 100行 ✅
 3. 读取规范: guidelines/guidelines/v2.md
 4. 执行策略:
-   [备份] Copy-Item README.md README.md.backup
-   [脚本] 使用PowerShell精确删除附录
-   [编码] UTF-8无BOM
-   [验证] 每步后read_file检查
+  [备份] Copy-Item README.md README.md.backup
+    [脚本] 使用PowerShell精确删除附录
+    [编码] UTF-8无BOM
+    [验证] 每步后read_file检查
 5. 结果:
-   - 原始: 35KB
-   - 优化: 5KB
-   - 节省: 86% ✅
+  - 原始: 35KB
+  - 优化: 5KB
+  - 节省: 86% ✅
 6. 清理: Remove-Item README.md.backup
 ```
 
@@ -1623,21 +1715,21 @@ THEN 按优先级执行验证:
 **AI执行流程**:
 ```yaml
 1. 识别场景: 场景D - 代码审查/安全检查
-2. 读取规范: 
-   - guidelines/guidelines/v2.md (输入校验)
-   - guidelines/guidelines/v2.md (日志安全)
+2. 读取规范:
+  - guidelines/guidelines/v2.md (输入校验)
+  - guidelines/guidelines/v2.md (日志安全)
 3. 检查项目:
-   [日志安全]
-   - ❌ 发现: logger.info(`连接: ${connectionString}`)
-   - ✅ 修复: logger.info(`连接: ${maskUri(connectionString)}`)
-   
-   [输入校验]
-   - ❌ 发现: 缺少类型检查
-   - ✅ 修复: 添加 Joi schema
-   
-   [错误处理]
-   - ✅ 已有可行动错误信息
-   - ✅ 已保留原始错误cause
+  [日志安全]
+  - ❌ 发现: logger.info(`连接: ${connectionString}`)
+  - ✅ 修复: logger.info(`连接: ${maskUri(connectionString)}`)
+
+  [输入校验]
+  - ❌ 发现: 缺少类型检查
+  - ✅ 修复: 添加 Joi schema
+
+  [错误处理]
+  - ✅ 已有可行动错误信息
+  - ✅ 已保留原始错误cause
 4. 输出报告: 不符合项清单 + 修复建议
 ```
 
@@ -1659,7 +1751,7 @@ THEN 按优先级执行验证:
 ### 如果文档不一致
 ```yaml
 1. 对比 README 与代码实际行为
-2. 检查 CHANGELOG [Unreleased] 是否有条目
+  2. 检查 CHANGELOG [Unreleased] 是否有条目
 3. 运行示例验证: node examples/<file>
 4. 更新类型声明: index.d.ts
 ```
@@ -1755,17 +1847,17 @@ THEN 按优先级执行验证:
 **正确做法**:
 ```yaml
 必须按 4 级优先级顺序:
-1. 🔴 用户明确提到项目名 → 直接使用
-   示例: "在 chat 项目中..." → 使用 chat
-   
-2. 🟠 当前工作目录匹配 → 从目录推断
-   示例: D:\Project\monSQLize\ → 使用 monSQLize
-   
-3. 🟡 正在编辑的文件路径 → 从路径推断
-   示例: D:\Project\vsse\src\index.js → 使用 vsse
-   
-4. 🟢 上述都无法识别 → 询问用户
-   示例: 列出可用项目，让用户选择
+  1. 🔴 用户明确提到项目名 → 直接使用
+示例: "在 chat 项目中..." → 使用 chat
+
+  2. 🟠 当前工作目录匹配 → 从目录推断
+示例: D:\Project\monSQLize\ → 使用 monSQLize
+
+  3. 🟡 正在编辑的文件路径 → 从路径推断
+示例: D:\Project\vsse\src\index.js → 使用 vsse
+
+  4. 🟢 上述都无法识别 → 询问用户
+示例: 列出可用项目，让用户选择
 ```
 
 **实际案例**:
@@ -1800,11 +1892,11 @@ THEN 按优先级执行验证:
 🔴 铁律: 项目 Profile 规范 > 通用最佳实践
 
 IF: Profile 明确禁止某个做法
-THEN: 
+THEN:
   ✅ 100% 遵守项目规范
   ❌ 禁止使用通用实践（即使你认为是"好实践"）
   ❌ 禁止自作主张"优化"架构
-  
+
 示例:
   Profile 说"禁止 Service 层" → 即使通用实践推荐，也必须禁止
   Profile 说"强制 Mocha" → 即使 Jest 更流行，也必须用 Mocha
@@ -1919,18 +2011,18 @@ THEN:
 
 IF: Profile 中有禁止项或强制项
 THEN: 必须输出完整格式（包含所有章节）:
-  1. ✅ 项目名称、Profile 路径、读取状态
-  2. ✅ 完整的禁止项列表（不能省略）
-  3. ✅ 完整的强制项列表（不能省略）
-  4. ✅ 5 个自我检查问题（带答案）
-  5. ✅ 执行计划（说明将采用的架构/技术栈）
-  6. ✅ 最终确认（通过/失败）
+        1. ✅ 项目名称、Profile 路径、读取状态
+        2. ✅ 完整的禁止项列表（不能省略）
+        3. ✅ 完整的强制项列表（不能省略）
+        4. ✅ 5 个自我检查问题（带答案）
+        5. ✅ 执行计划（说明将采用的架构/技术栈）
+        6. ✅ 最终确认（通过/失败）
 
 IF: Profile 无特殊规范（通用规范）
 THEN: 输出简化格式:
-  1. ✅ 项目名称、Profile 路径、读取状态
-  2. ✅ 标注"使用通用规范"
-  3. ✅ 最终确认（通过）
+        1. ✅ 项目名称、Profile 路径、读取状态
+        2. ✅ 标注"使用通用规范"
+        3. ✅ 最终确认（通过）
 ```
 
 **实际案例**:
@@ -1961,16 +2053,16 @@ THEN: 输出简化格式:
 ```yaml
 代码行数计算标准:
   ✅ 单行: `const x = 1;` → 1 行（不触发）
-  ✅ 两行: 
-     const x = 1;
-     const y = 2;
-     → 2 行（不触发）
-  ✅ 三行及以上: 
-     const user = {
-       name: 'Alice',
-       age: 30
-     };
-     → 4 行（触发场景 0）
+  ✅ 两行:
+    const x = 1;
+    const y = 2;
+    → 2 行（不触发）
+  ✅ 三行及以上:
+    const user = {
+    name: 'Alice',
+    age: 30
+  };
+    → 4 行（触发场景 0）
 
 计算规则:
   - 包含注释行
@@ -2060,7 +2152,7 @@ THEN: 列出可用项目，询问用户选择
 **特殊情况: 多项目任务**
 ```yaml
 IF: 用户明确提到多个项目（如"在 chat 和 monSQLize 中都实现XX"）
-THEN: 
+THEN:
   - 提示用户将分别处理每个项目
   - 每个项目独立执行场景0
   - 分别读取各自的 Profile
@@ -2075,22 +2167,22 @@ THEN:
 1. **读取完整文件**: `guidelines/profiles/<project>.md`
 
 2. **定位关键章节**（按优先级搜索）:
-   - [ ] "## 禁止" 或 "## 强制" 或包含 "❌" "✅" 的章节
-   - [ ] "## 测试框架" 或 "## 测试规范" 章节
-   - [ ] "## MCP 配置" 章节（如涉及数据库操作）
-   - [ ] "## 架构规范" 或 "## 技术栈" 章节
-   - [ ] "## 编码规范" 或 "## 代码风格" 章节
+    - [ ] "## 禁止" 或 "## 强制" 或包含 "❌" "✅" 的章节
+    - [ ] "## 测试框架" 或 "## 测试规范" 章节
+    - [ ] "## MCP 配置" 章节（如涉及数据库操作）
+    - [ ] "## 架构规范" 或 "## 技术栈" 章节
+    - [ ] "## 编码规范" 或 "## 代码风格" 章节
 
 3. **提取关键信息**（使用关键词匹配）:
-   - 搜索包含 "禁止" "❌" "不允许" "不得" 的内容
-   - 搜索包含 "强制" "✅" "必须" "务必" 的内容
-   - 搜索包含 "测试框架" "断言库" "测试目录" 的内容
+    - 搜索包含 "禁止" "❌" "不允许" "不得" 的内容
+    - 搜索包含 "强制" "✅" "必须" "务必" 的内容
+    - 搜索包含 "测试框架" "断言库" "测试目录" 的内容
 
 4. **构建规范清单**:
-   - 禁止项列表: [...]
-   - 强制项列表: [...]
-   - 测试规范: [...]
-   - 其他约束: [...]
+    - 禁止项列表: [...]
+    - 强制项列表: [...]
+    - 测试规范: [...]
+    - 其他约束: [...]
 
 **验证标准**:
 ```yaml
@@ -2145,10 +2237,10 @@ THEN: 🔴 无条件遵守 Profile 规范
 示例冲突:
   - Profile: "禁止 Service 层" vs 通用实践: "推荐 Service 层"
     → 遵守 Profile，禁止 Service 层 ✅
-    
+
   - Profile: "强制 Joi" vs 通用实践: "推荐 class-validator"
     → 遵守 Profile，使用 Joi ✅
-    
+
   - Profile: "强制 Mocha" vs 通用实践: "推荐 Jest"
     → 遵守 Profile，使用 Mocha ✅
 ```
@@ -2219,13 +2311,13 @@ flowchart TD
 [如果Profile中有禁止项，必须全部列出，格式如下:]
 - ❌ **禁止XXX层** - 原因: <原因> | 替代方案: <方案>
 - ❌ **禁止XXX库** - 原因: <原因> | 替代方案: <方案>
-[如果没有禁止项，输出: "- 无特定禁止项"]
+  [如果没有禁止项，输出: "- 无特定禁止项"]
 
 #### ✅ 提取到的【强制项】（必须列出）:
 [如果Profile中有强制项，必须全部列出，格式如下:]
 - ✅ **强制使用XXX** - 说明: <说明>
 - ✅ **强制XXX规范** - 说明: <说明>
-[如果没有强制项，输出: "- 使用通用规范"]
+  [如果没有强制项，输出: "- 使用通用规范"]
 
 #### 🔍 自我检查结果:
 1. ❓ 我是否已读取项目Profile？ → [✅ YES / ❌ NO]
@@ -2276,48 +2368,48 @@ flowchart TD
 用户: "帮我在 chat 项目实现消息设置功能"
 
 AI 必须输出:
-  ═══════════════════════════════════════════════════════════════
+    ═══════════════════════════════════════════════════════════════
   ### 🔴 场景0执行结果（项目规范确认）
-  
-  **项目名称**: chat  
-  **Profile路径**: `guidelines/profiles/chat.md`  
-  **读取状态**: ✅ 已完整读取
-  
-  ---
-  
+
+      **项目名称**: chat
+      **Profile路径**: `guidelines/profiles/chat.md`
+      **读取状态**: ✅ 已完整读取
+
+      ---
+
   #### 📋 提取到的【禁止项】:
-  - ❌ **禁止Service层** - 原因: 项目中Service层几乎都是重复的 | 替代方案: Controller + Utils模式
-  - ❌ **禁止DTO类** - 原因: 使用Joi验证即可 | 替代方案: Joi schema
-  - ❌ **禁止Repository层** - 原因: 使用utilsCrud | 替代方案: utilsCrud
-  - ❌ **禁止class-validator** - 原因: 项目统一使用Joi | 替代方案: Joi
-  - ❌ **禁止Jest** - 原因: 项目统一使用Mocha | 替代方案: Mocha
-  
+      - ❌ **禁止Service层** - 原因: 项目中Service层几乎都是重复的 | 替代方案: Controller + Utils模式
+      - ❌ **禁止DTO类** - 原因: 使用Joi验证即可 | 替代方案: Joi schema
+      - ❌ **禁止Repository层** - 原因: 使用utilsCrud | 替代方案: utilsCrud
+      - ❌ **禁止class-validator** - 原因: 项目统一使用Joi | 替代方案: Joi
+      - ❌ **禁止Jest** - 原因: 项目统一使用Mocha | 替代方案: Mocha
+
   #### ✅ 提取到的【强制项】:
-  - ✅ **强制使用Joi验证** - 说明: 所有输入必须使用Joi进行验证
-  - ✅ **强制使用Mocha测试** - 说明: 测试框架必须使用Mocha
-  - ✅ **强制中文注释** - 说明: Model/Controller/Utils中的注释必须使用中文
-  - ✅ **强制使用utilsCrud** - 说明: 数据库操作必须使用utilsCrud而非直接Mongoose
-  
+      - ✅ **强制使用Joi验证** - 说明: 所有输入必须使用Joi进行验证
+      - ✅ **强制使用Mocha测试** - 说明: 测试框架必须使用Mocha
+      - ✅ **强制中文注释** - 说明: Model/Controller/Utils中的注释必须使用中文
+      - ✅ **强制使用utilsCrud** - 说明: 数据库操作必须使用utilsCrud而非直接Mongoose
+
   #### 🔍 自我检查结果:
-  1. ❓ 我是否已读取项目Profile？ → ✅ YES
-  2. ❓ 我是否知道项目禁止什么？ → ✅ YES（已列出5项禁止）
-  3. ❓ 我是否会使用项目禁止的技术？ → ✅ NO
-  4. ❓ 我是否优先项目规范而非通用实践？ → ✅ YES
-  5. ❓ 我是否需要重新读取Profile？ → ✅ NO
-  
+      1. ❓ 我是否已读取项目Profile？ → ✅ YES
+      2. ❓ 我是否知道项目禁止什么？ → ✅ YES（已列出5项禁止）
+      3. ❓ 我是否会使用项目禁止的技术？ → ✅ NO
+      4. ❓ 我是否优先项目规范而非通用实践？ → ✅ YES
+      5. ❓ 我是否需要重新读取Profile？ → ✅ NO
+
   #### 📊 我的执行计划（基于以上规范）:
-  - 架构模式: Controller + Utils（不使用Service层，遵守禁止项1）
-  - 验证方式: Joi schema（不使用DTO/class-validator，遵守禁止项2和4）
-  - 测试框架: Mocha（不使用Jest，遵守禁止项5）
-  - 数据库操作: utilsCrud（不直接使用Mongoose，遵守强制项4）
-  - 注释语言: 中文（遵守强制项3）
-  
+      - 架构模式: Controller + Utils（不使用Service层，遵守禁止项1）
+      - 验证方式: Joi schema（不使用DTO/class-validator，遵守禁止项2和4）
+      - 测试框架: Mocha（不使用Jest，遵守禁止项5）
+      - 数据库操作: utilsCrud（不直接使用Mongoose，遵守强制项4）
+      - 注释语言: 中文（遵守强制项3）
+
   #### 🎯 最终确认:
-  ✅ **场景0检查通过** - 所有检查为YES，禁止项已识别，开始实现功能
-  
-  ═══════════════════════════════════════════════════════════════
-  
-  现在开始实现功能...
+      ✅ **场景0检查通过** - 所有检查为YES，禁止项已识别，开始实现功能
+
+      ═══════════════════════════════════════════════════════════════
+
+      现在开始实现功能...
 ```
 
 ---
