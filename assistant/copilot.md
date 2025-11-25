@@ -14,7 +14,7 @@
 ```yaml
 第1秒: 项目识别
          [ ] 识别项目名称（从请求/目录/路径/询问用户）
-         [ ] 确认 Profile 路径: guidelines/profiles/<project>.md
+         [ ] 确认 Profile 路径: ../guidelines/profiles/<project>.md
          ❌ 如果识别失败 → 🛑 HALT → 询问用户
 
 第2秒: Profile 读取
@@ -112,7 +112,7 @@
 **在整个对话过程中，你应该始终记住**:
 ```
 项目名称: <从第1秒识别>
-Profile路径: guidelines/profiles/<project>.md
+Profile路径: ../guidelines/profiles/<project>.md
 禁止项: <从Profile提取，如: Service层, DTO, Jest>
 测试目录: <从Profile提取，如: test/unit/features/>
 测试框架: <从Profile提取，如: Mocha + Chai expect>
@@ -141,7 +141,7 @@ MCP配置: <从Profile提取，如: mongodb-monsqlize>
 
 ### 断点 2: Profile不存在 🔴
 ```yaml
-触发条件: guidelines/profiles/<project>.md 不存在
+触发条件: ../guidelines/profiles/<project>.md 不存在
 必须执行:
   - 🛑 立即停止
   - ❌ 不得使用默认规范
@@ -239,7 +239,7 @@ MCP配置: <从Profile提取，如: mongodb-monsqlize>
 ```yaml
 项目识别:
   [ ] 已识别项目名称（chat/monSQLize/vsse/等）
-    [ ] 已确认 Profile 路径: guidelines/profiles/<project>.md
+    [ ] 已确认 Profile 路径: ../guidelines/profiles/<project>.md
 
 Profile 读取:
   [ ] 已完整读取 Profile 文件
@@ -453,7 +453,7 @@ STEP 1: 任务判断
   ELSE: 跳过 MCP 检查
 
 STEP 2: Profile 读取
-          - 读取: guidelines/profiles/<project>.md
+          - 读取: ../guidelines/profiles/<project>.md
           - 定位: "## MCP 配置" 章节
           - 如果不存在 → 🛑 断点 5 → 拒绝调用
 
@@ -485,7 +485,7 @@ STEP 5: 执行操作
 
 AI 执行:
   1. 识别项目: monSQLize ✅
-  2. 读取 Profile: guidelines/profiles/monSQLize.md ✅
+  2. 读取 Profile: ../guidelines/profiles/monSQLize.md ✅
   3. 找到 MCP 配置:
     - 允许的服务器: mongodb-monsqlize ✅
     - 数据库: monsqlize ✅
@@ -500,7 +500,7 @@ AI 执行:
 
 AI 执行:
   1. 识别项目: chatAI ✅
-  2. 读取 Profile: guidelines/profiles/chatAI.md ✅
+  2. 读取 Profile: ../guidelines/profiles/chatAI.md ✅
   3. 查找 MCP 配置: ❌ 未找到
   4. 🛑 断点 5 触发
   5. 输出: "该项目未配置 MCP 服务器，无法执行数据库操作"
@@ -540,7 +540,7 @@ AI 执行:
 ```
 用户请求
     ↓
-[0] 🔴 【强制第一步】读取项目 Profile (guidelines/profiles/<project>.md)
+[0] 🔴 【强制第一步】读取项目 Profile (../guidelines/profiles/<project>.md)
     ↓
 [0.1] 🔴 识别项目特定禁止项（Service层/DTO/测试框架等）
     ↓
@@ -662,7 +662,7 @@ flowchart TD
 ```yaml
 IF: 触发 MCP 检查条件
 THEN 必须执行:
-  1. 🔴 读取 guidelines/profiles/<project>.md
+  1. 🔴 读取 ../guidelines/profiles/<project>.md
   2. 🔴 检查是否有 "MCP 配置" 章节
   3. 🔴 确认允许的 MCP 服务器名称
   4. 🔴 仅调用 Profile 中声明的 MCP 服务器
@@ -684,7 +684,7 @@ THEN 必须执行:
 
 AI 执行:
   1. ✅ 识别为数据库查询任务（触发 MCP 检查）
-  2. ✅ 读取 guidelines/profiles/monSQLize.md
+  2. ✅ 读取 ../guidelines/profiles/monSQLize.md
   3. ✅ 检查 MCP 配置章节
   4. ✅ 确认允许使用 "mongodb-monsqlize"
   5. ✅ 调用 mongodb-monsqlize MCP 服务器
@@ -708,7 +708,7 @@ AI 执行:
 
 AI 执行:
   1. ✅ 识别为数据库查询任务（触发 MCP 检查）
-  2. ✅ 读取 guidelines/profiles/chatAI.md
+  2. ✅ 读取 ../guidelines/profiles/chatAI.md
   3. ❌ 未找到 MCP 配置章节
   4. ❌ 拒绝调用任何 MCP 服务器
   5. ✅ 提示用户: "该项目未配置 MCP 服务器，无法执行数据库操作"
@@ -731,12 +731,12 @@ STEP 1: 识别项目名称
   [ ] 优先级2: 当前工作目录（D:\Project\<project_name>\*）
   [ ] 优先级3: 正在编辑的文件路径
   [ ] 优先级4: 询问用户选择
-  [ ] 验证 Profile 文件存在: guidelines/profiles/<project>.md
+  [ ] 验证 Profile 文件存在: ../guidelines/profiles/<project>.md
 
       详见: 场景0详细实施指南 - STEP 1
 
 STEP 2: 读取项目 Profile
-  [ ] 读取 guidelines/profiles/<project>.md（完整通读）
+  [ ] 读取 ../guidelines/profiles/<project>.md（完整通读）
   [ ] 定位关键章节：禁止/强制/测试框架/MCP配置/架构规范
   [ ] 智能提取：禁止项、强制项、测试规范、其他约束
   [ ] 构建规范清单（记录到短期记忆）
@@ -1217,7 +1217,7 @@ THEN 执行:
   - 记录目标项目名称
 
 步骤2: 读取项目 Profile 🔴
-  - 读取 guidelines/profiles/<project>.md
+  - 读取 ../guidelines/profiles/<project>.md
   - 定位到 "MCP 配置" 章节
   - 检查是否配置了数据库访问
 
@@ -1331,7 +1331,7 @@ db.<collection>.find({ ... }).limit(10)
 
 AI 执行:
   1. ✅ 识别项目: chat
-  2. ✅ 读取 guidelines/profiles/chat.md
+  2. ✅ 读取 ../guidelines/profiles/chat.md
   3. ✅ 确认 MCP: mongodb-chat，数据库: trip
   4. ✅ 连接数据库
   5. ✅ 执行查询: db.trips.find({}).sort({created_at: -1}).limit(10)
@@ -1467,7 +1467,7 @@ THEN 按优先级执行验证:
 
 ### 阶段 0: 项目规范确认 (最高优先级) 🔴
 ```yaml
-[ ] 🔴 读取项目 Profile: guidelines/profiles/<project>.md (完整通读)
+[ ] 🔴 读取项目 Profile: ../guidelines/profiles/<project>.md (完整通读)
   [ ] 🔴 提取架构禁止项:
       [ ] 是否禁止 Service 层？记录: ___________
       [ ] 是否禁止 Repository 层？记录: ___________
@@ -1491,7 +1491,7 @@ THEN 按优先级执行验证:
 
 ### 阶段 1: 任务开始前 (信息收集)
 ```yaml
-[ ] 读取项目 Profile: guidelines/profiles/<project>.md
+[ ] 读取项目 Profile: ../guidelines/profiles/<project>.md
   [ ] 确认项目类型: Node.js / Python / Go / Java / Rust
   [ ] 确认测试命令: npm test / pytest / go test / mvn test / cargo test
   [ ] 确认覆盖率标准: 默认≥60%, 核心API≥70% (Profile可覆盖)
@@ -1621,7 +1621,7 @@ THEN 按优先级执行验证:
 ## 📚 详细规范引用
 
 - 📖 [完整规范文档](../guidelines/guidelines/v2.md) - 20个章节的详细规范
-- 📁 [项目配置目录](../guidelines/profiles/) - 各项目的特定覆盖配置
+- 📁 [项目配置目录](../../guidelines/profiles/) - 各项目的特定覆盖配置
 - 📝 [Bug 修复分析模板](../guidelines/templates/bug-fix-analysis-template.md) - 修复前必填
 - 🤖 [MCP 调度规则](../guidelines/mcp/v2.md) - AI模型选择与调度
 - 📄 [文件模板](../guidelines/templates/file-templates.md) - .editorconfig/.gitattributes等
@@ -1637,7 +1637,7 @@ THEN 按优先级执行验证:
 **AI执行流程**:
 ```yaml
 1. 识别场景: 场景A - 功能新增/修改
-2. 读取Profile: guidelines/profiles/monSQLize.md
+2. 读取Profile: ../guidelines/profiles/monSQLize.md
 3. 读取规范: guidelines/guidelines/v2.md
 4. 执行任务:
   [代码] 创建 lib/mongodb/find-page.js
@@ -1932,7 +1932,7 @@ THEN:
 ```yaml
 IF: 任务需要数据库操作（查询/统计/分析）
 THEN 必须执行:
-  1. 🔴 读取 guidelines/profiles/<project>.md
+  1. 🔴 读取 ../guidelines/profiles/<project>.md
   2. 🔴 检查是否有 "MCP 配置" 章节
   3. 🔴 确认允许的 MCP 服务器名称
   4. 🔴 仅调用 Profile 中声明的 MCP 服务器
@@ -2125,7 +2125,7 @@ flowchart TD
 
 **优先级1**: 从用户请求中明确识别
 - 用户明确提到项目名（如"在 chat 项目中..."、"monSQLize 的..."）
-- 提取关键词，映射到 guidelines/profiles/ 目录中的 .md 文件名
+- 提取关键词，映射到 ../guidelines/profiles/ 目录中的 .md 文件名
 - 验证 Profile 文件是否存在
 
 **优先级2**: 从当前工作目录推断
@@ -2164,7 +2164,7 @@ THEN:
 
 **执行步骤**:
 
-1. **读取完整文件**: `guidelines/profiles/<project>.md`
+1. **读取完整文件**: `../guidelines/profiles/<project>.md`
 
 2. **定位关键章节**（按优先级搜索）:
     - [ ] "## 禁止" 或 "## 强制" 或包含 "❌" "✅" 的章节
@@ -2302,7 +2302,7 @@ flowchart TD
 ### 🔴 场景0执行结果（项目规范确认）
 
 **项目名称**: <project_name>  
-**Profile路径**: `guidelines/profiles/<project>.md`  
+**Profile路径**: `../guidelines/profiles/<project>.md`  
 **读取状态**: ✅ 已完整读取（必须YES）
 
 ---
@@ -2348,7 +2348,7 @@ flowchart TD
 ### 🔴 场景0执行结果（项目规范确认）
 
 **项目名称**: <project_name>  
-**Profile路径**: `guidelines/profiles/<project>.md`  
+**Profile路径**: `../guidelines/profiles/<project>.md`  
 **读取状态**: ✅ 已完整读取
 **规范类型**: 使用通用规范（无项目特定禁止项或强制项）
 
@@ -2372,7 +2372,7 @@ AI 必须输出:
   ### 🔴 场景0执行结果（项目规范确认）
 
       **项目名称**: chat
-      **Profile路径**: `guidelines/profiles/chat.md`
+      **Profile路径**: `../guidelines/profiles/chat.md`
       **读取状态**: ✅ 已完整读取
 
       ---
