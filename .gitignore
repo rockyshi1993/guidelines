@@ -6,6 +6,7 @@
 
 analysis-reports/
 bug-analysis/
+reports/
 
 # ====================
 # 运行时生成文件（不提交）

@@ -1,4 +1,4 @@
-# chat 项目规范（AI 助手用）
+# user 项目规范（AI 助手用）
 
 ## 📑 目录导航
 
@@ -32,7 +32,7 @@
 
 ### 基本信息
 
-- **项目名称**: chat
+- **项目名称**: user
 - **项目类型**: Egg.js 企业级后端服务（TypeScript）
 - **框架版本**: Egg.js 3.17.5
 - **Node.js**: ≥16.0.0
@@ -72,10 +72,10 @@ test/              # 测试文件
 
 ### 数据库连接信息
 
-**项目数据库连接**: `mongodb://root:SYY54YsaXuBHndSe@47.84.66.151:28017/trip?authSource=admin&directConnection=true`
+**项目数据库连接**: `mongodb://root:SYY54YsaXuBHndSe@47.84.66.151:28017/user?authSource=admin&directConnection=true`
 
 - **主机**: 47.84.66.151:28017
-- **数据库名**: trip
+- **数据库名**: user
 - **用户名**: root
 - **密码**: SYY54YsaXuBHndSe
 - **认证数据库**: admin
@@ -454,7 +454,7 @@ result.list = formatConversationList(result.list);
 **所有内部服务的 URL 通过 Nacos 动态配置**，配置路径：`ctx.app.config.custom.microservices.*`
 
 **Nacos 配置位置**:
-- Group: `chat-service`
+- Group: `user-service`
 - DataId: `config.json`
 
 **配置示例**:
