@@ -1,1889 +1,1712 @@
 # chat 项目规范（AI 助手用）
 
-## 规范继承
-本项目遵循 `.github/guidelines.md` 通用规范。以下仅列出项目特定配置和例外。
+## 📑 目录导航
+
+- [📋 规范继承](#-规范继承)
+- [📦 项目信息](#-项目信息)
+  - [运行时环境](#运行时环境)
+  - [核心依赖](#核心依赖)
+  - [开发依赖](#开发依赖)
+- [🚀 本地命令](#-本地命令)
+  - [依赖管理](#依赖管理)
+  - [开发命令](#开发命令)
+  - [编译和构建](#编译和构建)
+  - [测试命令](#测试命令)
+  - [生产部署命令](#生产部署命令)
+- [📂 目录结构](#-目录结构)
+  - [核心代码结构](#核心代码结构)
+  - [根目录文件](#根目录文件)
+- [🔒 MCP 配置](#-mcp-配置强制)
+  - [数据库访问配置](#数据库访问配置)
+  - [操作权限](#操作权限)
+  - [使用流程](#使用流程)
+- [📋 例外与覆盖](#-例外与覆盖)
+  - [代码风格例外](#代码风格例外)
+  - [框架特定规范](#框架特定规范)
+  - [TypeScript 配置](#typescript-配置)
+- [🏗️ 项目特定规则](#️-项目特定规则)
+  - [1. 强制使用中间件](#1--强制使用中间件必须遵守)
+    - [1.1 CRUD 操作必须使用 crudHelper](#11-crud-操作必须使用-crudhelper)
+    - [1.2 响应必须使用 responseHelper](#12-响应必须使用-responsehelper)
+    - [1.3 接口鉴权必须使用 userAuth](#13-接口鉴权必须使用-userauth)
+    - [1.4 请求参数校验必须使用 validatorHelper](#14-请求参数校验必须使用-validatorhelper)
+    - [1.5 HTTP 请求必须使用 httpHelper](#15-http-请求必须使用-httphelper)
+  - [2. 不使用 Service 层](#2-️-不使用-service-层架构规则)
+    - [2.1 业务逻辑写在 Controller](#21-业务逻辑写在-controller)
+    - [2.2 通用工具函数封装规则](#22-通用工具函数封装规则)
+    - [2.3 历史 Service 代码处理](#23-历史-service-代码处理)
+  - [3. 服务器之间路由通信无需鉴权](#3-服务器之间路由通信无需鉴权)
+  - [4. 数据库操作规范](#4-数据库操作规范)
+  - [5. 国际化响应规范](#5--国际化响应规范必须遵守)
+- [🎯 架构层次规则](#-架构层次规则)
+  - [代码分层](#代码分层本项目不使用-service-层)
+  - [职责划分](#职责划分)
+  - [代码示例](#代码示例)
+- [✅ 快速检查清单](#-快速检查清单)
+  - [代码风格检查](#代码风格检查)
+  - [中间件使用检查](#中间件使用检查强制)
+  - [数据库操作检查](#数据库操作检查强制)
+  - [架构分层检查](#架构分层检查不使用-service-层)
+  - [路由配置检查](#路由配置检查)
+  - [TypeScript 类型检查](#typescript-类型检查)
+  - [错误处理检查](#错误处理检查)
+  - [国际化检查](#国际化检查)
 
 ---
 
-## 项目信息
-
-- **类型**: Egg.js 微服务（TypeScript）
-- **定位**: 旅行助手核心服务，提供行程规划、AI 对话、协同编辑等功能
-- **运行时**: Node.js 18.x, 20.x (LTS)
-- **操作系统**: Windows, Linux (Ubuntu)
-- **数据库**: MongoDB (Mongoose), Redis
-- **框架**: Egg.js 3.x + TypeScript
-- **关键功能**: 
-  - Trip 行程管理（CRUD）
-  - AI 智能对话（OpenAI）
-  - 实时协同编辑（ShareDB + WebSocket）
-  - 文档生成（PDF/Excel/iCal）
-  - 第三方集成（Google Maps, Pexels, Weather API）
+## 📋 规范继承
+本项目遵循 `D:/OneDrive/Project/common/guidelines/guidelines/v3.md` 通用规范。以下仅列出项目特定配置和例外。
 
 ---
 
-## 本地命令
+## 📦 项目信息
 
-```powershell
+- **项目名称**: chat
+- **项目类型**: Egg.js 企业级后端服务（TypeScript）
+- **模块系统**: CommonJS（require/exports）
+- **项目定位**: AI 对话系统 + 行程管理 + 营销活动平台
+- **当前版本**: v1.0.0
+- **框架版本**: Egg.js 3.17.5
+
+### 运行时环境
+- **Node.js 版本**: ≥16.0.0
+- **操作系统**: Linux（生产环境）
+- **数据库**: 
+  - ✅ MongoDB（主数据库，通过 egg-mongoose）
+  - ✅ Redis（缓存和会话，通过 egg-redis）
+  - ✅ ShareDB（实时协作，MongoDB 存储）
+- **部署方式**: Docker + PM2
+
+### 核心依赖
+- **Web 框架**: 
+  - `egg@^3.17.5` - Egg.js 核心框架
+  - `egg-scripts@2` - 生产环境启动脚本
+- **数据库**: 
+  - `egg-mongoose@^4.0.1` - MongoDB ODM
+  - `egg-redis@^2.6.0` - Redis 客户端
+  - `sharedb@^5.1.1` - 实时协作引擎
+  - `sharedb-mongo@^5.0.0` - ShareDB MongoDB 适配器
+- **中间件与工具**:
+  - `egg-jwt@^3.1.7` - JWT 认证
+  - `egg-validate@^2.0.2` - 参数校验
+  - `egg-cors@^3.0.1` - 跨域支持
+  - `egg-websocket-plugin@^3.0.0-beta.0` - WebSocket 支持
+  - `joi@^18.0.1` - 高级参数校验
+- **AI 集成**:
+  - `openai@^4.71.1` - OpenAI API 客户端
+- **其他工具**:
+  - `axios@^1.7.3` - HTTP 客户端
+  - `moment@^2.30.1` - 日期处理
+  - `uuid@^9.0.1` - UUID 生成
+  - `exceljs@^4.4.0` - Excel 处理
+
+### 开发依赖
+- `egg-bin@^6.8.1` - 开发和测试工具
+- `eslint@8` - 代码质量检查
+- `eslint-config-egg@13` - Egg.js ESLint 配置
+
+---
+
+## 🚀 本地命令
+
+### 依赖管理
+```bash
 # 安装依赖
-npm ci
+npm install
+```
 
-# 本地开发（启动开发服务器）
+### 开发命令
+```bash
+# 本地开发（热重载）
 npm run dev
 
-# 构建（TypeScript 编译）
+# 访问地址
+# http://localhost:9001/
+```
+
+### 编译和构建
+```bash
+# TypeScript 编译
 npm run tsc
 
-# 启动（生产模式）
-npm start
+# 清理编译输出
+npm run clean
+```
 
-# 代码检查
+### 测试命令
+```bash
+# 运行所有测试
+npm test
+
+# 仅运行单元测试
+npm run test:local
+
+# 代码覆盖率
+npm run cov
+
+# 代码风格检查
 npm run lint
+```
+
+### 生产部署命令
+```bash
+# 启动服务（守护进程）
+npm start
 
 # 停止服务
 npm stop
+
+# 不同环境启动
+npm run sit         # SIT 环境（4 workers）
+npm run aita-uat    # UAT 环境（4 workers）
+npm run aita-prod   # 生产环境（4 workers）
+
+# PM2 管理（推荐）
+npm run pm2-sit     # PM2 启动 SIT
+npm run pm2-stop-sit # PM2 停止
 ```
 
 ---
 
-## 目录结构
+## 📂 目录结构
 
+### 核心代码结构
 ```
 app/
-├── controller/          # 控制器层（路由处理 + 业务逻辑 + 数据库操作）
-│   ├── home/           # 用户端 API
-│   └── admin/          # 管理端 API
-├── model/              # Mongoose 数据模型
-├── middleware/         # 中间件
-├── validator/          # 参数校验器（🔴 建议迁移到 Controller 内使用 Joi）
-├── utils/              # 工具类（无状态纯函数，替代 Service 层）
-│   ├── ex-error/       # 自定义错误处理
-│   ├── response/       # 统一响应封装
-│   └── http/           # HTTP 请求工具
-├── extend/             # Egg.js 扩展
-└── public/             # 静态资源
+├── controller/              # 控制器层
+│   ├── admin/              # 管理后台控制器（60+ 个）
+│   ├── home/               # 前台用户控制器（60+ 个）
+│   ├── internal/           # 内部服务接口
+│   ├── open/               # 开放 API
+│   ├── schedule/           # 定时任务控制器
+│   └── ws/                 # WebSocket 控制器
+│
+├── service/                # ⚠️ 历史遗留，新代码不使用
+│   └── ...                # 旧代码保留，不再新增
+│
+├── model/                  # 数据模型层（Mongoose Schemas）
+│   ├── conversation.ts     # 对话模型
+│   ├── message.ts         # 消息模型
+│   ├── trip.ts            # 行程模型
+│   └── ...                # 60+ 数据模型
+│
+├── middleware/             # 中间件层
+│   ├── crudHelper.ts      # CRUD 工具注入 ⭐
+│   ├── responseHelper.ts  # 统一响应处理 ⭐
+│   ├── userAuth.ts        # 用户认证 ⭐
+│   ├── validatorHelper.ts # 参数校验 ⭐
+│   ├── httpHelper.ts      # HTTP 调用工具
+│   ├── internalAuth.ts    # 内部服务认证
+│   └── exceptions.ts      # 异常处理
+│
+├── routes/                 # 路由配置
+│   ├── admin/             # 管理后台路由
+│   ├── home/              # 前台路由
+│   ├── internal/          # 内部路由
+│   ├── open/              # 开放路由
+│   ├── schedule/          # 定时任务路由
+│   └── ws/                # WebSocket 路由
+│
+├── validator/              # 参数校验器（Joi Schemas）
+│   ├── home/              # 前台校验器
+│   └── admin/             # 后台校验器
+│
+├── utils/                  # 工具函数（⭐ 重要）
+│   ├── crud.ts            # CRUD 通用操作
+│   ├── repository.ts      # 数据仓储工具
+│   └── ...                # 业务工具函数（调用次数 ≥2 时封装）
+│
+├── schedule/               # 定时任务
+├── hooks/                  # 生命周期钩子
+│   ├── app/               # 应用级钩子
+│   └── agent/             # Agent 级钩子
+│
+└── public/                 # 静态资源
 
-config/                 # 配置文件
-├── config.default.ts   # 默认配置
-├── config.local.ts     # 本地开发配置
-├── config.prod.ts      # 生产环境配置
-└── plugin.ts           # 插件配置
+config/                     # 配置文件
+├── config.default.ts       # 默认配置
+├── config.local.ts         # 本地开发配置
+├── config.sit.ts          # SIT 环境配置
+├── config.uat.ts          # UAT 环境配置
+└── config.prod.ts         # 生产环境配置
 
-typings/                # TypeScript 类型定义
-├── enum/               # 枚举类型
-├── interface/          # 接口定义
-└── ExEntitys.ts        # 实体类型
+typings/                    # TypeScript 类型定义
+├── enum/                   # 枚举类型
+├── interface/              # 接口定义
+└── app/                    # Egg 应用类型扩展
+```
 
-test/                   # 测试文件
-├── unit/               # 单元测试（使用 Mocha + Chai）
-│   ├── features/       # 功能测试
-│   ├── infrastructure/ # 基础设施测试
-│   └── utils/          # 工具函数测试
-└── integration/        # 集成测试
-
-docs/                   # 项目文档
-bug-analysis/           # Bug 分析报告
-
-⚠️ 注意：历史遗留的 `app/service/` 目录中的文件不要继续使用，
-         新功能必须按照"Controller + Utils"模式开发
+### 根目录文件
+```
+package.json                # 项目配置
+tsconfig.json              # TypeScript 配置
+.eslintrc                  # ESLint 配置（egg-config-egg）
+.gitignore                 # Git 忽略配置
+.gitlab-ci.yml             # GitLab CI/CD 配置
+app.ts                     # 应用启动入口
+agent.ts                   # Agent 启动入口
+README.md                  # 项目说明
+CHANGELOG.md               # 变更日志
 ```
 
 ---
 
-## 架构与技术栈强制规范（🔴 最高优先级）
+## 🔒 MCP 配置（🔴 强制）
 
-### 🔴 架构层次禁止项
-
-**禁止使用 Service 层**:
-- ❌ 不创建 `app/service/` 目录下的新文件
-- ❌ 不写业务逻辑 Service 类
-- ✅ Controller 直接操作数据库（使用 `ctx.utilsCrud`）
-- ✅ 复用逻辑封装在 `app/utils/` 目录
-
-**目录结构说明**:
-```
-app/
-├── controller/          # 控制器层（业务逻辑 + 数据库操作）
-├── model/              # Mongoose 模型定义
-├── utils/              # 工具函数（可复用逻辑，无状态纯函数）
-├── middleware/         # 中间件
-└── validator/          # 参数校验器
-```
-
-**为什么禁止 Service 层？**
-- 现有 Service 层代码大多是重复的 CRUD 操作
-- 增加不必要的抽象层，降低代码可读性
-- utilsCrud 已提供统一的数据库操作接口
-- 特殊业务逻辑应封装为 Utils 工具函数
-
-**正确做法**:
-```typescript
-// ✅ 正确 - Controller 直接操作数据库
-export default class NotificationSettingsController extends Controller {
-    public async getSettings() {
-        const { ctx } = this;
-        const { utilsCrud } = ctx as any;
-
-        // 直接查询数据库
-        const settings = await utilsCrud.findOne(ctx.model.NotificationSettings, {
-            userId: ctx.state.user._id,
-            advisorId: ctx.query.advisorId,
-        });
-
-        return ctx.success(settings);
-    }
-}
-
-// ✅ 正确 - 复用逻辑放在 utils
-// app/utils/notification-helpers.ts
-export function maskEmail(email: string): string {
-    return email.replace(/(.{1}).*(@.*)/, '$1***$2');
-}
-
-// ❌ 错误 - 不要创建 Service 层
-// app/service/notification-settings.service.ts  ← 禁止！
-export default class NotificationSettingsService extends Service {
-    public async getSettings() { ... }  // ❌ 不需要
-}
-```
-
-### 🔴 参数验证强制规范
-
-**强制使用 Joi**:
-- ✅ 使用 `ctx.Joi` 定义验证规则
-- ✅ 使用 `ctx.validateJoi()` 进行参数校验
-- ❌ 禁止使用 `class-validator`
-- ❌ 禁止使用 `DTO` 类定义
-- ❌ 禁止使用 `ajv`、`yup` 等其他验证库
-
-**正确做法**:
-```typescript
-export default class NotificationSettingsController extends Controller {
-    public async updateSettings() {
-        const { ctx } = this;
-        const { Joi, validateJoi } = ctx as any;
-
-        // ✅ 正确 - 在 Controller 中直接使用 Joi
-        const body = await validateJoi(Joi.object({
-            advisorId: Joi.string().required(),
-            emailEnabled: Joi.boolean().optional(),
-            silentWaitTime: Joi.number().integer().min(0).max(100).optional(),
-        }), 'body');
-
-        // 使用 body...
-    }
-}
-
-// ❌ 错误 - 不要定义 DTO 类
-// dto/notification-settings.dto.ts  ← 禁止！
-export class UpdateNotificationSettingsDto {
-    @IsBoolean()  // ❌ 不要用 class-validator
-    emailEnabled?: boolean;
-}
-```
-
-### 🔴 测试框架强制规范
-
-**测试文件位置（唯一正确位置）**:
-- ✅ **功能测试**: `test/unit/features/<功能名>.test.js`
-- ✅ **工具函数测试**: `test/unit/utils/<工具名>.test.js`
-- ✅ **基础设施测试**: `test/unit/infrastructure/<模块名>.test.js`
-- ❌ **禁止**: `test/app/controller/` - 规范中未提及，不得创建
-- ❌ **禁止**: `test/integration/` - 除非规范明确要求
-- ❌ **禁止**: 其他任何位置
-
-**示例**:
-```
-✅ 正确：test/unit/features/user_preference.test.js
-✅ 正确：test/unit/utils/date_formatter.test.js
-❌ 错误：test/app/controller/user_preference.test.js  ← 禁止！
-❌ 错误：test/user_preference.test.js  ← 禁止！
-```
-
-**强制使用 Mocha + Chai**:
-- ✅ 使用 `mocha` 作为测试运行器
-- ✅ 使用 `chai` 作为断言库（必须使用 `expect`）
-- ✅ 使用 `egg-mock` 进行 Egg.js 应用测试
-- ❌ 禁止使用 `Jest`
-- ❌ 禁止使用 `@jest/globals`
-- ❌ 禁止使用 Node.js `assert` 或 `node:assert`（必须用 Chai）
-- ❌ 禁止使用 `Ava`、`Tape` 等其他测试框架
-
-**正确做法**:
-```javascript
-// test/unit/features/notification-settings.test.js
-
-// ✅ 正确 - 使用 Mocha + Chai
-const { describe, it, before, after, beforeEach } = require('mocha');
-const { expect } = require('chai');  // ← 必须用 Chai
-const { app } = require('egg-mock/bootstrap');
-
-describe('NotificationSettings Controller', () => {
-    before(async () => {
-        await app.ready();
-    });
-
-    it('应该返回默认设置', async () => {
-        const result = await app.httpRequest()
-            .get('/home/user/notification-settings')
-            .expect(200);
-
-        // ✅ 使用 Chai 的 expect
-        expect(result.body.success).to.be.true;
-        expect(result.body.data).to.have.property('emailEnabled');
-    });
-});
-```
-
-**错误做法**:
-```javascript
-// ❌ 错误 - 使用了 Jest
-import { describe, it, expect } from '@jest/globals';  // ← 禁止！
-
-// ❌ 错误 - 使用了 Node.js assert
-const { strict: assert } = require('node:assert');  // ← 禁止！
-assert.equal(result.body.success, true);  // ← 禁止！应该用 Chai
-
-// ❌ 错误 - 文件位置错误
-// test/app/controller/notification-settings.test.js  ← 禁止！
-```
-
-### 🔴 数据库操作强制规范
-
-**强制使用 utilsCrud**:
-- ✅ 使用 `ctx.utilsCrud.findOne()` 查询单条数据
-- ✅ 使用 `ctx.utilsCrud.find()` 查询多条数据
-- ✅ 使用 `ctx.utilsCrud.createOne()` 创建数据
-- ✅ 使用 `ctx.utilsCrud.updateOne()` 更新数据
-- ✅ 使用 `ctx.utilsCrud.deleteOne()` 删除数据（软删除）
-- ⚠️ 谨慎：直接使用 Mongoose Model API（仅特殊场景）
-
-**正确做法**:
-```typescript
-// ✅ 正确 - 使用 utilsCrud
-const settings = await utilsCrud.findOne(ctx.model.NotificationSettings, {
-    userId,
-    advisorId,
-    del_flag: 0,
-}, {
-    lean: true,
-});
-
-// ⚠️ 谨慎 - 仅在 utilsCrud 无法满足时使用
-const settings = await ctx.model.NotificationSettings.findOne({ userId }).lean();
-```
-
-### 🔴 注释语言强制规范
-
-**强制使用中文注释**:
-- ✅ Model 字段必须添加中文注释
-- ✅ 函数必须添加中文注释（说明功能、参数、返回值）
-- ✅ 复杂逻辑必须添加中文行内注释
-- ⚠️ 技术术语可保留英文（如 JWT、OAuth、CRUD）
-
-**正确做法**:
-```typescript
-const schema = new Schema({
-    // 用户ID：关联 users 集合，用于标识通知设置所属用户
-    userId: {
-        type: Schema.Types.String,
-        required: true,
-        index: true, // 查询场景：按用户获取设置
-    },
-
-    // 静默等待时间（分钟）：消息到达后等待 N 分钟再发送通知
-    // 范围：0-100，0表示立即发送，默认5分钟
-    silentWaitTime: {
-        type: Schema.Types.Number,
-        default: 5,
-        min: 0,
-        max: 100,
-    },
-});
-
-/**
- * 获取通知设置
- * @param userId - 用户ID
- * @param advisorId - 顾问ID
- * @returns 通知设置对象
- */
-public async getSettings(userId: string, advisorId: string) {
-    // ...
-}
-```
-
-### 🔴 文件命名规范
-
-**强制使用下划线命名（snake_case）**:
-- ✅ Model文件: `user_preference.ts`、`chat_log.ts`、`trip_config.ts`
-- ✅ Controller文件: `user_preference.ts`、`message_setting.ts`
-- ✅ Utils文件: `user_preference_helpers.ts`、`date_formatter.ts`
-- ✅ 测试文件: `user_preference.test.js`、`chat_log.test.js`
-- ❌ 禁止使用: `user-preference.ts`（kebab-case）
-- ❌ 禁止使用: `userPreference.ts`（camelCase）
-- ❌ 禁止使用: `UserPreference.ts`（PascalCase）
-
-**目录结构命名**:
-- ✅ 目录名使用小写字母，可用下划线分隔
-- ✅ 示例: `app/utils/ex-error/`、`test/unit/features/`
-
-**为什么使用下划线命名？**
-- 项目历史约定（已有90+个文件使用下划线命名）
-- 便于与数据库字段命名保持一致（如 `user_id`、`created_at`）
-- 符合Python、Ruby等语言的命名习惯
-- 避免与TypeScript类名（PascalCase）和变量名（camelCase）混淆
-
-### 🔴 接口文档强制规范
-
-**强制创建API文档**:
-- 🔴 **位置**: `docs/api/<resource_name>.md`
-- 🔴 **时机**: 创建新Controller时必须同步创建
-- 🔴 **内容要求**:
-  - ✅ 接口基本信息（路径、方法、描述、鉴权方式）
-  - ✅ 请求参数（字段名、类型、必填、说明、约束）
-  - ✅ 响应参数（字段名、类型、说明）
-  - ✅ 请求示例（curl命令 + JSON示例）
-  - ✅ 响应示例（成功响应 + 错误响应）
-  - ✅ 数据模型（TypeScript接口定义）
-  - ✅ 错误码（通用错误码 + 业务错误码）
-  - ✅ 使用场景示例（前端代码示例）
-  - ✅ 注意事项（业务规则、性能优化建议）
-
-**文档模板结构**:
-```markdown
-# <资源名称> API 文档
-
-> **功能**: <功能描述>
-> **版本**: v1.0
-> **最后更新**: YYYY-MM-DD
-
-## 📋 目录
-- [1. 获取<资源>](#1-获取资源)
-- [2. 创建<资源>](#2-创建资源)
-- [3. 更新<资源>](#3-更新资源)
-- [4. 删除<资源>](#4-删除资源)
-- [5. 数据模型](#5-数据模型)
-- [6. 错误码](#6-错误码)
-- [7. 使用场景示例](#7-使用场景示例)
-- [8. 注意事项](#8-注意事项)
-
-## 1. 获取<资源>
-
-### 基本信息
-- **接口路径**: `GET /api/<resource>`
-- **接口描述**: <描述>
-- **鉴权方式**: JWT Token (Bearer)
-- **权限要求**: <权限要求>
-
-### 请求参数
-| 字段名 | 类型 | 必填 | 说明 | 默认值 |
-|--------|------|------|------|--------|
-| field1 | string | 是 | 字段说明 | - |
-
-### 请求示例
-\`\`\`bash
-curl -X GET "https://api.example.com/api/<resource>" \\
-  -H "Authorization: Bearer <token>"
-\`\`\`
-
-### 响应参数
-| 字段名 | 类型 | 说明 |
-|--------|------|------|
-| success | boolean | 请求是否成功 |
-| data | object | 响应数据 |
-
-### 响应示例
-\`\`\`json
-{
-  "success": true,
-  "data": { }
-}
-\`\`\`
-
-## 5. 数据模型
-\`\`\`typescript
-interface <Resource> {
-  _id: string;
-  // ...
-}
-\`\`\`
-
-## 6. 错误码
-| 错误码 | HTTP状态码 | 说明 | 解决方案 |
-|--------|-----------|------|---------|
-| UNAUTHORIZED | 401 | 未登录 | 重新登录 |
-```
-
-**禁止行为** ❌:
-- ❌ 不创建接口文档
-- ❌ 文档与实际代码不一致
-- ❌ 缺少请求/响应示例
-- ❌ 缺少错误码说明
-- ❌ 使用英文编写文档（应使用中文）
-
-**文档更新规范**:
-- ✅ Controller变更时同步更新文档
-- ✅ 在CHANGELOG.md中记录API变更
-- ✅ 使用版本号标记文档版本
-- ✅ 保留变更历史记录
-
-**示例参考**:
-- ✅ `docs/api/user_preference.md` - 用户偏好设置API文档（完整示例）
-- ✅ `docs/api/trip.md` - 行程管理API文档
-- ✅ `docs/api/message.md` - 消息API文档
-
----
-
-## MCP 配置（🔴 强制）
-
+### 数据库访问配置
+- **数据库类型**: MongoDB
+- **连接字符串**: `mongodb://root:SYY54YsaXuBHndSe@47.84.66.151:28017/?directConnection=true`
+- **数据库名称**: `trip`（通过 Nacos 配置）
 - **允许的 MCP 服务器**: `mongodb-chat`
-- **数据库/资源**: `chat` (旅行助手数据库)
-- **用途**: 
-  - 行程数据查询和分析
-  - 用户行为数据分析
-  - AI 对话历史查询
-  - 系统运营数据统计
-- **限制**: 
-  - ✅ 允许：读取操作（find, findOne, count, aggregate）
-  - ✅ 允许：开发/测试环境的写入操作（用于数据修复和测试）
-  - ⚠️ 谨慎：生产环境的更新操作（需明确说明原因和影响范围）
-  - ❌ 禁止：删除整个集合或数据库
-  - ❌ 禁止：批量删除用户数据（需通过正常 API 流程）
 
-**数据库连接信息**:
-- 主机: `47.84.66.151:28017`
-- 认证: 通过 MCP 配置管理（不在代码中硬编码）
-- 连接方式: `directConnection=true`
+### 操作权限
+- ✅ **允许：读取操作**
+  - find, findOne, count, aggregate
+  - 用于查询数据库实际结构
+  - 用于分析数据和调试
 
-**主要集合**:
-- `trips` - 行程数据（核心集合）
-  - 字段：trip_name, owner_id, status, start_date, end_date, traveler_count, created_at, updated_at
-  - 用途：行程 CRUD、分享、协同编辑
-- `users` - 用户数据
-  - 字段：username, email, avatar, privilege, created_at, last_login_at
-  - 用途：用户管理、权限验证、登录记录
-- `messages` - 消息记录
-  - 字段：trip_id, user_id, content, type, created_at
-  - 用途：行程消息、系统通知
-- `ai_conversations` - AI 对话历史
-  - 字段：user_id, trip_id, role, content, model, created_at
-  - 用途：AI 对话记录、行程生成历史
-- `share_logs` - 分享记录
-  - 字段：trip_id, share_type, share_link, views, created_at
-  - 用途：分享统计、访问分析
-- `edit_sessions` - 协同编辑会话
-  - 字段：trip_id, user_ids, status, last_active_at
-  - 用途：协同编辑状态跟踪
+- ⚠️ **谨慎：写入操作（必须用户确认）**
+  - insertOne, insertMany
+  - updateOne, updateMany
+  - replaceOne
+  - **规则**: 除了查询之外，所有数据库操作必须用户确认后才能执行
 
-**敏感字段**（禁止在查询结果中返回）:
-- `password_hash` - 用户密码哈希
-- `password` - 任何密码字段
-- `access_token` - 访问令牌
-- `refresh_token` - 刷新令牌
-- `api_key` - API 密钥
-- `secret` - 任何密钥字段
-- `private_data` - 私有数据字段
+- 🔴 **禁止：删除操作（除非明确授权）**
+  - deleteOne, deleteMany
+  - drop
+  - **规则**: 删除操作需要明确说明原因并获得用户同意
 
-**常见查询场景**:
+### 使用流程
+1. **修复代码/写需求涉及数据库时**:
+   - ✅ 必须先使用 MCP 查询数据库实际结构
+   - ✅ 基于真实 Schema 编写代码
+   - ✅ 避免字段名/类型错误
 
-1. **用户反馈 Bug - 需要查看实际数据**
-   ```yaml
-   用户: "用户说行程创建失败"
-   AI 执行:
-     1. 查询最近失败的行程创建记录
-        db.trips.find({ 
-          status: 'failed',
-          created_at: { $gte: new Date(Date.now() - 24*3600*1000) }
-        }).sort({ created_at: -1 }).limit(10)
-     2. 检查错误日志集合（如果有）
-     3. 分析失败原因（字段缺失、数据格式、权限等）
-     4. 提供修复建议
-   ```
-
-2. **数据统计分析**
-   ```yaml
-   用户: "最近一周有多少新用户？"
-   AI 执行:
-     1. 连接 mongodb-chat
-     2. 查询 users 集合
-        db.users.count({ 
-          created_at: { 
-            $gte: new Date(Date.now() - 7*24*3600*1000) 
-          } 
-        })
-     3. 统计数量并分析趋势
-     4. 可选：按日期分组统计
-        db.users.aggregate([
-          { $match: { created_at: { $gte: ... } } },
-          { $group: { 
-            _id: { $dateToString: { format: "%Y-%m-%d", date: "$created_at" } },
-            count: { $sum: 1 }
-          }},
-          { $sort: { _id: 1 } }
-        ])
-   ```
-
-3. **数据结构探索**
-   ```yaml
-   用户: "trips 集合有哪些字段？"
-   AI 执行:
-     1. 使用 collection-schema 工具
-        mcp_mongodb-chat_collection-schema(database: "trip", collection: "trips")
-     2. 整理字段列表和类型
-     3. 标注必填/可选/索引字段
-     4. 提供字段用途说明（参考上方"主要集合"）
-   ```
-
-4. **用户行为分析**
-   ```yaml
-   用户: "哪些用户最活跃？"
-   AI 执行:
-     1. 查询行程数量最多的用户
-        db.trips.aggregate([
-          { $group: { _id: "$owner_id", trip_count: { $sum: 1 } } },
-          { $sort: { trip_count: -1 } },
-          { $limit: 10 }
-        ])
-     2. 关联用户信息（使用 $lookup 或分别查询）
-     3. 整理为易读的排行榜
-   ```
-
-5. **问题排查 - 数据验证**
-   ```yaml
-   用户: "为什么有些行程没有显示开始日期？"
-   AI 执行:
-     1. 查询缺失 start_date 的行程
-        db.trips.find({ 
-          $or: [
-            { start_date: { $exists: false } },
-            { start_date: null },
-            { start_date: "" }
-          ]
-        }).limit(10)
-     2. 统计数量
-        db.trips.count({ start_date: { $exists: false } })
-     3. 分析原因（数据迁移遗留、创建逻辑缺陷等）
-     4. 提供数据修复建议
-   ```
-
-**说明**: AI 助手在调用任何 MCP 数据库操作前，必须先读取本配置。未在此处声明的 MCP 服务器一律禁止调用。
+2. **查询后的操作**:
+   - ✅ 展示查询结果给用户
+   - ⚠️ 写入操作必须等待用户确认
+   - 🔴 删除操作必须明确原因和影响
 
 ---
 
-## 例外与覆盖
-
-### 测试策略例外 🔴 重要
-相对通用规范（guidelines.md 第 7 节）的差异：
-
-- **不需要编写脚本测试**: chat 项目作为 Egg.js 微服务，依赖复杂的运行时环境（Nacos 配置中心、MongoDB、Redis、WebSocket 连接等），自动化测试成本极高且收益有限
-- **测试方式**: 采用**手动测试 + API 文档 + 回归测试清单**的方式
-- **测试文档位置**: README.md 包含完整的回归测试清单
-- **质量保障**: 
-  - ✅ 通过 TypeScript 类型检查保障代码质量
-  - ✅ 通过 ESLint 检查代码规范
-  - ✅ 通过 Bug 分析文档（bug-analysis/）记录问题和修复
-  - ✅ 通过详细的 API 文档（README.md）指导手动测试
-  - ✅ 通过 CHANGELOG.md 追踪所有变更
-
-**AI 助手执行规则**:
-- ❌ **禁止**要求或创建任何测试脚本（test/*.test.ts）
-- ❌ **禁止**运行 `npm test` 命令（项目未配置测试命令）
-- ✅ **允许**更新 README.md 中的回归测试清单
-- ✅ **允许**创建 Bug 分析文档（bug-analysis/*.md）
-- ✅ **强制**更新 CHANGELOG.md 记录变更
+## 📋 例外与覆盖
 
 ### 代码风格例外
-相对通用规范（guidelines.md 第 1 节）的差异：
-- **缩进**: 4 空格（Egg.js 默认，通用规范默认：2 空格）
-- **TypeScript**: 严格模式但允许 `noImplicitAny: false`
-- **路径别名**: 使用 TypeScript paths 简化导入
+相对通用规范（v3.md 代码规范）的差异：
+- **模块系统**: CommonJS（通用规范默认：ESM）
+- **缩进**: 4 空格（通用规范默认：2 空格）
+- **引号**: 单引号（与通用规范一致）
+- **分号**: 必须（与通用规范一致）
+
+### 框架特定规范
+- **文件命名**: PascalCase（Controller/Service/Model）
+  - 示例：`ConversationController.ts`, `TripService.ts`
+- **路由命名**: kebab-case
+  - 示例：`/home/conversation/list`
+- **枚举命名**: PascalCase + Enum 后缀
+  - 示例：`StatusEnum`, `MessageRoleEnum`
+
+### TypeScript 配置
+- **target**: ES2019
+- **module**: CommonJS
+- **strict**: true
+- **noImplicitAny**: false（允许隐式 any）
+- **路径别名**:
   ```typescript
-  import { TripStatusEnum } from 'enum/trip/trip_status'
-  import { responseHelper } from 'utils/response/response'
-  import { TripValidator } from 'validator/home/trip_validator'
+  "paths": {
+    "enum/*": ["typings/enum/*"],
+    "interface/*": ["typings/interface/*"],
+    "config/*": ["config/*"],
+    "utils/*": ["app/utils/*"],
+    "validator/*": ["app/validator/*"]
+  }
   ```
 
-### 文档更新策略
-相对通用规范（guidelines.md 第 5-6 节）的差异：
-- **README.md**: 作为主要 API 文档和测试清单，任何对外 API 变更都需要更新
-- **Bug 分析**: 使用 `bug-analysis/*.md` 而不是独立的 Bug 跟踪系统
-- **CHANGELOG.md**: 必须记录所有对外可见变更（包括 Bug 修复）
-
-### 其他例外
-- **日志语言**: 中文（便于运维团队查看）
-- **注释语言**: 中文为主，技术术语保留英文
-- **错误信息**: 中文（面向用户）+ 错误码（便于追踪）
-
 ---
 
-## 接口开发规范
+## 🏗️ 项目特定规则
 
-### 1. 接口开发完整流程
+### 1. 🔴 强制使用中间件（必须遵守）
 
-```
-步骤1: 定义 Model（如不存在）→ app/model/<model_name>.ts
-       ↓
-步骤2: 定义路由配置 → app/routes/<group>/<resource>.ts
-       ↓
-步骤3: 选择鉴权方式 → userAuth/dbToken/internalAuth
-       ↓
-步骤4: 实现控制器方法 → app/controller/<group>/<Resource>Controller.ts
-       ↓
-步骤5: 参数校验（Joi）→ 使用 ctx.validateJoi
-       ↓
-步骤6: 数据库操作 → 使用 ctx.utilsCrud
-       ↓
-步骤7: 统一响应处理 → 使用 ctx.success/fail/error
-       ↓
-步骤8: 错误兜底处理 → try-catch + ctx.error
-       ↓
-步骤9: 手动测试与文档更新
-```
-
-### 2. Mongoose 模型定义规范
-
-**位置**: `app/model/<model_name>.ts`
-
-**标准模板**:
+#### 1.1 CRUD 操作必须使用 crudHelper
 ```typescript
-import { Application } from 'egg';
-import { StatusEnumValues, StatusEnum } from 'enum/status';
-import { DelFlagEnum } from 'enum/del_flag';
+// ✅ 正确：使用 ctx.utilsCrud
+const { paginate, createOne, updateOne, deleteOne } = (ctx as any).utilsCrud;
 
-export default (app: Application) => {
-    const mongoose = app.mongoose;
-    const Schema = mongoose.Schema;
+// 分页查询
+const result = await paginate(ctx.model.Conversation, 
+  { user_id: userId, del_flag: 0 },
+  { page: 1, pageSize: 10, sort: { created_at: -1 } }
+);
 
-    const schema = new Schema(
-        {
-            // 业务主键（必须加索引）
-            user_id: {
-                type: Schema.Types.ObjectId,
-                required: true,
-                index: true,
-            },
-            
-            // 字符串字段
-            title: {
-                type: Schema.Types.String,
-                required: true,
-                trim: true,
-                maxlength: 100,
-            },
-            
-            // 枚举字段
-            status: {
-                type: Schema.Types.Number,
-                enum: StatusEnumValues,
-                default: StatusEnum.Enable,
-                required: true,
-            },
-            
-            // 数组字段
-            tags: {
-                type: [Schema.Types.String],
-                required: false,
-                default: [],
-            },
-            
-            // 对象字段（灵活扩展）
-            extends: {
-                type: Schema.Types.Mixed,
-                required: false,
-            },
-            
-            // 必备字段：软删除标记
-            del_flag: {
-                type: Schema.Types.Number,
-                required: true,
-                default: DelFlagEnum.Normal,
-            },
-            
-            // 必备字段：操作人追踪
-            created_by: { type: Schema.Types.ObjectId, required: false },
-            updated_by: { type: Schema.Types.ObjectId, required: false },
-        },
-        {
-            // 🔴 自动维护时间戳
-            timestamps: {
-                createdAt: 'created_at',
-                updatedAt: 'updated_at',
-            },
-        }
-    );
-
-    // 🔴 复合索引（根据查询场景定义）
-    schema.index({ user_id: 1, status: 1 });
-    schema.index({ created_at: -1 });
-
-    return mongoose.model('ModelName', schema, 'collection_name');
-};
-```
-
-**字段命名规范**:
-- ID 字段: `<关联对象>_id` (如 `user_id`, `trip_id`)
-- 时间字段: `<动作>_at` 或 `<状态>_date` (如 `created_at`, `start_date`)
-- 标志字段: `is_<状态>` 或 `<名词>_flag` (如 `is_public`, `del_flag`)
-- 计数字段: `<名词>_count` (如 `view_count`, `traveler_count`)
-
-**必须包含的字段** 🔴:
-```typescript
-{
-    del_flag: { type: Number, default: 0 },       // 软删除标记
-    created_by: { type: ObjectId },               // 创建人
-    updated_by: { type: ObjectId },               // 更新人
-    // created_at, updated_at 由 timestamps 自动维护
-}
-```
-
-### 3. 路由配置规范
-
-**位置**: `app/routes/<group>/<resource>.ts`
-
-**标准模板**:
-```typescript
-import { Application } from 'egg';
-import { RouterGroup } from 'egg-router-group';
-
-export default (app: Application, groupRouter: RouterGroup) => {
-    const { controller } = app;
-
-    groupRouter.group({
-        name: '<资源名称>',
-        prefix: '/<resources>',
-        middlewares: [],  // 分组级中间件
-    }, (sub: RouterGroup) => {
-        const ctrl = controller.home.<resource>Controller;
-
-        // RESTful 风格路由
-        sub.get('/', ctrl.index);           // 列表
-        sub.get('/:id', ctrl.detail);       // 详情
-        sub.post('/', ctrl.create);         // 创建
-        sub.put('/:id', ctrl.update);       // 更新
-        sub.delete('/:id', ctrl.delete);    // 删除
-        
-        // 自定义动作路由
-        sub.post('/:id/regenerate', ctrl.regenerate);
-    });
-};
-```
-
-**路由分组策略**（参考 `app/routes/home/index.ts`）:
-
-```typescript
-// 分组1：公开接口（无鉴权）
-router.group({
-    prefix: '/home',
-    middlewares: [],
-}, (group) => {
-    articleGroup(app, group);              // 文章列表
-    featureModulesGroup(app, group);       // 功能模块
+// 创建
+const doc = await createOne(ctx.model.Conversation, { 
+  user_id: userId,
+  title: '新对话'
 });
 
-// 分组2：需要登录（JWT + 单点登录）
-router.group({
-    prefix: '/home',
-    middlewares: [userJwt, singleLogin],
-}, (group) => {
-    tripGroup(app, group);                 // 我的行程
-    messageGroup(app, group);              // 消息
-});
+// 更新
+const updated = await updateOne(ctx.model.Conversation,
+  { _id: id },
+  { $set: { title: '更新标题' } }
+);
 
-// 分组3：需要登录 + 权限校验（写操作）
-router.group({
-    prefix: '/home',
-    middlewares: [userJwt, singleLogin, loginCheck],
-}, (group) => {
-    // 写操作路由
-});
-```
-
-**路由命名规范**:
-| 场景 | 路径格式 | 示例 |
-|------|---------|------|
-| 资源列表 | `GET /<resources>` | `GET /trips` |
-| 资源详情 | `GET /<resources>/:id` | `GET /trips/123` |
-| 创建资源 | `POST /<resources>` | `POST /trips` |
-| 更新资源 | `PUT /<resources>/:id` | `PUT /trips/123` |
-| 删除资源 | `DELETE /<resources>/:id` | `DELETE /trips/123` |
-| 自定义动作 | `POST /<resources>/:id/<action>` | `POST /messages/123/regenerate` |
-
-### 4. 鉴权方式选择指南
-
-**鉴权方式对比表**:
-
-| 鉴权方式 | 使用场景 | 请求头要求 | 代码示例 |
-|---------|---------|-----------|---------|
-| **无鉴权** | 公开接口 | 无 | `middlewares: []` |
-| **userAuth (basic)** | 用户读操作 | `Authorization: Bearer <token>` | `app.middleware.userAuth({ level: 'basic' })` |
-| **userAuth (strict)** | 用户写操作 | `Authorization: Bearer <token>` | `app.middleware.userAuth({ level: 'strict' })` |
-| **dbToken** | 批量写入 | `x-action-token: <token>` | `app.middleware.dbToken()` |
-| **internalAuth** | 服务间调用 | `x-internal-token: <token>` | `app.middleware.internalAuth()` |
-
-**userAuth 三级鉴权模式**（实际使用，参考 `app/middleware/userAuth.ts`）:
-
-```typescript
-// Level 1: public - 无需鉴权
-const publicAuth = app.middleware.userAuth({ level: 'public' });
-sub.get('/articles/list', publicAuth, ctrl.list);
-
-// Level 2: basic - JWT + 单点登录（默认）
-const basicAuth = app.middleware.userAuth({ level: 'basic' });
-sub.get('/trips', basicAuth, ctrl.index);
-
-// Level 3: strict - JWT + 单点登录 + 权限校验（非 GET 需 Trial 及以上）
-const strictAuth = app.middleware.userAuth({ level: 'strict' });
-sub.post('/trips', strictAuth, ctrl.create);
-```
-
-**鉴权流程**:
-```
-请求
- ↓
-[SSE场景] 从 Query 提取 Token → ctx.request.header.authorization
- ↓
-[Cookie场景] 从 Cookie 提取 Token → ctx.request.header.authorization
- ↓
-[JWT校验] 验证 Token 有效性 → 解析用户信息 → ctx.state.user
- ↓
-[单点登录] 校验 Session 是否有效
- ↓
-[strict模式] 校验用户权限（非 GET 需 Trial 及以上）
- ↓
-业务处理
-```
-
-**特殊场景 - SSE 连接鉴权**（参考 `app/routes/internal/index.ts`）:
-```typescript
-// 服务端
-const baseAuth = app.middleware.userAuth({ level: 'basic' });
-sub.get('/sse', baseAuth, internal.sseController.stream);
-
-// 客户端（支持 Query 传 Token）
-const token = localStorage.getItem('token');
-const eventSource = new EventSource(
-    `/internal/sse?userId=123&authorization=Bearer ${token}`
+// 删除（软删除）
+const deleted = await deleteOne(ctx.model.Conversation,
+  { _id: id }
 );
 ```
 
-### 5. 数据库操作规范（utilsCrud）
-
-**注入方式**: 通过 `crudHelper` 中间件全局注入 `ctx.utilsCrud`
-
-**方法总览**:
-
-| 方法 | 用途 | 返回值 |
-|------|-----|-------|
-| `paginate` | 分页查询 | `{ list, total, page, pageSize, pages }` |
-| `findOne` | 查询单条 | `Document \| null` |
-| `findById` | 按 ID 查询（自动校验） | `Document \| null` |
-| `findMany` | 查询多条（不分页） | `Document[]` |
-| `createOne` | 新增单条 | `Document` |
-| `updateOne` | 更新单条 | `boolean` |
-| `deleteMany` | 批量删除 | `{ deleted: number }` |
-| `saveMany` | 批量新增/更新（支持 upsert） | `{ inserted, updated, errors }` |
-
-**分页查询标准模式**:
+**❌ 禁止直接使用 Mongoose Model**:
 ```typescript
-public async list() {
+// ❌ 错误：直接使用 Model
+const result = await ctx.model.Conversation.find({}).limit(10);
+```
+
+#### 1.2 响应必须使用 responseHelper
+```typescript
+// ✅ 正确：使用统一响应
+export default class ConversationController extends Controller {
+  async list() {
     const { ctx } = this;
-    const { Joi, validateJoi, utilsCrud } = ctx as any;
+    try {
+      const data = await ctx.service.ai.conversationService.list();
+      return ctx.success(data, '查询成功');
+    } catch (err) {
+      return ctx.error('[ConversationController]', err, '查询失败');
+    }
+  }
+
+  async create() {
+    const { ctx } = this;
+    // 业务校验失败
+    if (!ctx.request.body.title) {
+      throw ctx.fail('标题不能为空', 400);
+    }
+    // ... 创建逻辑
+    return ctx.success(result, '创建成功');
+  }
+}
+```
+
+**统一响应格式**:
+```typescript
+// 成功响应
+ctx.success(data, 'ok')
+// => { code: 0, message: 'ok', data: {...} }
+
+// 业务失败
+throw ctx.fail('参数错误', 400)
+// => { code: 400, message: '参数错误', data: null }
+
+// 系统错误
+ctx.error('[Tag]', err, '操作失败')
+// => { code: 500, message: '操作失败', data: { error: '...' } }
+```
+
+#### 1.3 接口鉴权必须使用 userAuth
+```typescript
+// routes/home/conversation.ts
+export default (app: Application, group: RouterGroup) => {
+  const ctrl = app.controller.home.conversationController;
+  
+  const sub = group.group({ prefix: '/conversation' });
+  
+  // ✅ 正确：使用 userAuth 中间件
+  // basic 级别：JWT + 单点登录校验
+  sub.get('/list', 
+    app.middleware.userAuth({ level: 'basic' }), 
+    ctrl.list
+  );
+  
+  // strict 级别：JWT + 单点登录 + 登录有效性校验
+  sub.post('/create',
+    app.middleware.userAuth({ level: 'strict' }),
+    ctrl.create
+  );
+  
+  // public 级别：无需鉴权
+  sub.get('/public',
+    ctrl.public
+  );
+};
+```
+
+**鉴权等级说明**:
+- `public`: 无需鉴权（直接放行）
+- `basic`: JWT + 单点登录校验（默认）
+- `strict`: JWT + 单点登录 + 登录有效性/风控校验
+
+#### 1.4 请求参数校验必须使用 validatorHelper
+```typescript
+// validator/home/conversation_validator.ts
+export default class ConversationValidator {
+  private ctx: Context;
+
+  constructor(ctx: Context) {
+    this.ctx = ctx;
+  }
+
+  async index() {
+    const schema = (this.ctx as any).Joi.object({
+      page: (this.ctx as any).Joi.number().integer().min(1).default(1),
+      pageSize: (this.ctx as any).Joi.number().integer().min(1).max(100).default(10),
+      keyword: (this.ctx as any).Joi.string().allow('', null),
+    });
+    return (this.ctx as any).validateJoi(schema, 'query');
+  }
+
+  async create() {
+    const schema = (this.ctx as any).Joi.object({
+      title: (this.ctx as any).Joi.string().required(),
+      user_id: (this.ctx as any).Joi.string().required(),
+    });
+    return (this.ctx as any).validateJoi(schema, 'body');
+  }
+}
+
+// controller/home/ConversationController.ts
+export default class ConversationController extends Controller {
+  private readonly validator: ConversationValidator;
+
+  constructor(ctx: any) {
+    super(ctx);
+    this.validator = new ConversationValidator(ctx);
+  }
+
+  async create() {
+    const { ctx } = this;
+    
+    // ✅ 正确：使用 validator 校验
+    await this.validator.create();
+    
+    // 校验通过后的数据已自动归一化
+    const { title, user_id } = ctx.request.body;
+    
+    // ... 业务逻辑
+  }
+}
+```
+
+#### 1.5 HTTP 请求必须使用 httpHelper
+
+**所有对外部服务的 HTTP 请求必须使用 `ctx.http` 工具**，禁止直接使用 axios 或其他 HTTP 库。
+
+```typescript
+// ✅ 正确：使用 ctx.http
+export default class ThirdPartyController extends Controller {
+  async callExternalAPI() {
+    const { ctx } = this;
+    
+    try {
+      // 基本 GET 请求
+      const result1 = await ctx.http.get(
+        '[ThirdParty]',
+        'https://api.example.com/users'
+      );
+      
+      // POST 请求（带参数）
+      const result2 = await ctx.http.post(
+        '[ThirdParty]',
+        'https://api.example.com/orders',
+        {
+          body: JSON.stringify({
+            userId: ctx.state.user._id,
+            items: [{ id: 1, qty: 2 }]
+          })
+        }
+      );
+      
+      // 带完整配置的请求
+      const result3 = await ctx.http.fetchJSON(
+        '[ThirdParty]',
+        'https://api.example.com/data',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query: 'test' }),
+          timeoutMs: 10000,        // 超时时间（默认 15000ms）
+          retries: 2,              // 重试次数（默认 1）
+          backoff: {               // 退避策略
+            baseMs: 300,
+            factor: 2,
+            jitter: true
+          },
+          expectedStatuses: [200, 201],  // 期望的成功状态码
+          map4xxToFail: true,      // 4xx 映射为业务错误（ctx.fail）
+          idempotencyKey: uuid(),  // 幂等性键（用于安全重试）
+          maxResponseBytes: 1024 * 1024,  // 响应大小限制（1MB）
+          redactHeaders: ['authorization', 'cookie']  // 日志脱敏头
+        }
+      );
+      
+      return ctx.success(result3);
+    } catch (err) {
+      return ctx.error('[ThirdParty]', err, '外部服务调用失败');
+    }
+  }
+}
+```
+
+**ctx.http API 说明**:
+
+```typescript
+// GET 请求（快捷方法）
+ctx.http.get(tag: string, url: string, init?: RequestInit)
+
+// POST 请求（快捷方法）
+ctx.http.post(tag: string, url: string, init?: RequestInit)
+
+// 完整请求方法
+ctx.http.fetchJSON(tag: string, url: string, init?: {
+  // 基本 fetch 选项
+  method?: string;
+  headers?: Record<string, string>;
+  body?: any;
+  
+  // httpHelper 扩展选项
+  timeoutMs?: number;           // 超时时间（默认 15000ms）
+  retries?: number;             // 重试次数（默认 1）
+  backoff?: {                   // 退避策略
+    baseMs?: number;            // 基础延迟（默认 300ms）
+    factor?: number;            // 增长因子（默认 2）
+    jitter?: boolean;           // 随机抖动（默认 true）
+  };
+  parseJson?: boolean | 'auto'; // 是否解析 JSON（默认 'auto'）
+  expectedStatuses?: number[];  // 额外的成功状态码
+  map4xxToFail?: boolean;       // 4xx 映射为业务错误（默认 true）
+  idempotencyKey?: string;      // 幂等性键（添加到请求头）
+  maxResponseBytes?: number;    // 响应大小限制（0 = 不限制）
+  redactHeaders?: string[];     // 日志脱敏头（默认 ['authorization', 'cookie']）
+})
+```
+
+**重要特性**:
+
+1. **自动重试**: 5xx 错误自动重试，4xx 错误不重试
+2. **退避策略**: 指数退避 + 随机抖动，避免雪崩
+3. **超时控制**: 每个请求独立超时，避免阻塞
+4. **追踪 ID**: 自动传递 `x-trace-id`，便于链路追踪
+5. **错误分级**:
+   - 4xx: 映射为 `ctx.fail()` 业务错误（不重试）
+   - 5xx: 抛出系统错误（可重试）
+6. **日志脱敏**: 自动脱敏敏感请求头（authorization, cookie）
+7. **幂等性**: 支持幂等性键，确保重试安全
+
+**配置项**（`config/config.default.ts`）:
+
+```typescript
+config.custom = {
+  http: {
+    timeoutMs: 15000,        // 全局默认超时
+    retries: 1,              // 全局默认重试次数
+    defaultHeaders: {        // 全局默认请求头
+      'Content-Type': 'application/json'
+    },
+    backoff: {               // 全局默认退避策略
+      baseMs: 300,
+      factor: 2,
+      jitter: true
+    }
+  }
+};
+```
+
+**❌ 禁止直接使用 axios 或 fetch**:
+
+```typescript
+// ❌ 错误：直接使用 axios
+import axios from 'axios';
+const result = await axios.get('https://api.example.com/data');
+
+// ❌ 错误：直接使用 fetch
+const response = await fetch('https://api.example.com/data');
+const result = await response.json();
+
+// ✅ 正确：使用 ctx.http
+const result = await ctx.http.get('[Tag]', 'https://api.example.com/data');
+```
+
+**错误处理示例**:
+
+```typescript
+async callAPI() {
+  const { ctx } = this;
+  
+  try {
+    const result = await ctx.http.post(
+      '[Payment]',
+      'https://payment.example.com/charge',
+      {
+        body: JSON.stringify({ amount: 100 }),
+        timeoutMs: 5000,
+        retries: 2,
+        map4xxToFail: true  // 4xx 会抛出 ctx.fail 错误
+      }
+    );
+    
+    return ctx.success(result);
+  } catch (err) {
+    // 如果是 4xx 错误（map4xxToFail=true），err 已经是 { code: 4xx, message }
+    // 直接抛出即可
+    if (err.code && err.code >= 400 && err.code < 500) {
+      throw err;  // ctx.fail 错误直接抛出
+    }
+    
+    // 5xx 或网络错误，记录日志并返回通用错误
+    return ctx.error('[Payment]', err, '支付服务调用失败');
+  }
+}
+```
+
+### 2. ⚠️ 不使用 Service 层（架构规则）
+
+**重要**: 本项目不使用 Service 层，所有业务逻辑直接写在 Controller 中。
+
+#### 2.1 业务逻辑写在 Controller
+```typescript
+// ✅ 正确：业务逻辑直接写在 Controller
+export default class ConversationController extends Controller {
+  async list() {
+    const { ctx } = this;
+    await this.validator.index();
+    
+    const user = ctx.state.user;
+    const { page, pageSize } = ctx.query;
+    
+    // ✅ 业务逻辑直接写在这里
+    const query = {
+      user_id: new Types.ObjectId(user._id),
+      del_flag: 0,
+      status: 1
+    };
+    
+    // 使用 CRUD 工具
+    const { paginate } = (ctx as any).utilsCrud;
+    const result = await paginate(
+      ctx.model.Conversation,
+      query,
+      { page, pageSize, sort: { created_at: -1 } }
+    );
+    
+    return ctx.success(result);
+  }
+  
+  async create() {
+    const { ctx } = this;
+    await this.validator.create();
+    
+    const user = ctx.state.user;
+    const { title } = ctx.request.body;
+    
+    // ✅ 业务逻辑直接写在这里
+    const { createOne } = (ctx as any).utilsCrud;
+    const conversation = await createOne(ctx.model.Conversation, {
+      user_id: new Types.ObjectId(user._id),
+      title,
+      status: 1,
+      del_flag: 0,
+      created_by: user._id
+    });
+    
+    return ctx.success(conversation, '创建成功');
+  }
+}
+```
+
+**❌ 错误：不要创建 Service**:
+```typescript
+// ❌ 错误：不要创建新的 Service 文件
+// service/ConversationService.ts
+export default class ConversationService extends Service {
+  async list(userId: string) {
+    // ❌ 不要这样做
+  }
+}
+```
+
+#### 2.2 通用工具函数封装规则
+
+**封装条件**: 当同一段逻辑**被调用 ≥2 次**时，才封装到 `app/utils/` 目录。
+
+**✅ 正确示例**：
+```typescript
+// app/utils/conversation-helper.ts
+/**
+ * 构建对话查询条件
+ * @param userId 用户ID
+ * @param filters 额外过滤条件
+ */
+export function buildConversationQuery(userId: string, filters: any = {}) {
+  return {
+    user_id: new Types.ObjectId(userId),
+    del_flag: 0,
+    status: 1,
+    ...filters
+  };
+}
+
+/**
+ * 格式化对话列表
+ * @param conversations 对话列表
+ */
+export function formatConversationList(conversations: any[]) {
+  return conversations.map(conv => ({
+    id: conv._id,
+    title: conv.title,
+    created_at: conv.created_at,
+    updated_at: conv.updated_at
+  }));
+}
+
+// controller/home/ConversationController.ts
+import { buildConversationQuery, formatConversationList } from 'utils/conversation-helper';
+
+export default class ConversationController extends Controller {
+  async list() {
+    const { ctx } = this;
+    const user = ctx.state.user;
+    
+    // ✅ 使用封装的工具函数
+    const query = buildConversationQuery(user._id, ctx.query);
+    
+    const { paginate } = (ctx as any).utilsCrud;
+    const result = await paginate(ctx.model.Conversation, query, { page: 1, pageSize: 10 });
+    
+    // ✅ 使用封装的工具函数
+    result.list = formatConversationList(result.list);
+    
+    return ctx.success(result);
+  }
+  
+  async detail() {
+    const { ctx } = this;
+    const user = ctx.state.user;
+    
+    // ✅ 第二次使用，证明封装是对的
+    const query = buildConversationQuery(user._id, { _id: ctx.params.id });
+    
+    // ... 其他逻辑
+  }
+}
+```
+
+**封装原则**:
+- ✅ **调用次数 ≥2**: 封装到 utils
+- ✅ **纯函数**: 无副作用，便于测试
+- ✅ **单一职责**: 每个函数只做一件事
+- ❌ **仅调用1次**: 不封装，直接写在 Controller
+
+#### 2.3 历史 Service 代码处理
+
+**现状**: 项目中存在历史遗留的 Service 代码（40+ 个）
+
+**处理规则**:
+- ✅ **旧代码**: 保持现状，不强制改造
+- ❌ **新代码**: 不再创建新的 Service
+- ✅ **重构时**: 逐步将 Service 逻辑迁移到 Controller + utils
+
+```typescript
+// ✅ 允许：调用历史 Service（兼容性）
+export default class OldController extends Controller {
+  async oldMethod() {
+    const { ctx } = this;
+    // ✅ 历史 Service 可以继续使用
+    const result = await ctx.service.ai.conversationService.list();
+    return ctx.success(result);
+  }
+}
+
+// ❌ 禁止：创建新的 Service
+// service/NewService.ts  ← 不要创建
+```
+
+### 3. 服务器之间路由通信无需鉴权
+
+**内部服务路由**（`/internal/*`）无需鉴权：
+```typescript
+// routes/internal/index.ts
+router.group({
+  prefix: '/internal',
+  middlewares: [],
+}, (group) => {
+  // 内部服务接口无需 userAuth
+  group.post('/conversation/sync', ctrl.sync);
+  group.get('/stats', ctrl.stats);
+});
+```
+
+### 4. 数据库操作规范
+
+#### 4.1 查询数据库结构（强制）
+```typescript
+// ✅ 修复代码/写需求前必须先查询实际结构
+// 1. 使用 MCP 连接数据库
+// 2. 查询 collection schema
+// 3. 基于真实字段编写代码
+
+// 示例：查询 conversations 表结构
+db.conversations.findOne()
+// 获取字段：_id, user_id, title, status, created_at, updated_at, del_flag
+```
+
+#### 3.2 所有写操作必须确认（强制）
+```typescript
+// ⚠️ 写入操作前必须：
+// 1. 展示操作影响范围
+// 2. 显示将要修改的数据
+// 3. 等待用户明确确认
+
+// 示例确认流程：
+console.log('即将执行以下操作：');
+console.log('- 操作类型：更新');
+console.log('- 影响文档：', { _id: xxx, title: 'xxx' });
+console.log('- 更新字段：', { title: '新标题' });
+console.log('请确认是否继续？(y/n)');
+// 等待用户输入 'y' 后执行
+```
+
+#### 3.3 Model 使用规范
+```typescript
+// ✅ 正确：通过 ctx.model 访问
+const Conversation = ctx.model.Conversation;
+const Message = ctx.model.Message;
+
+// Model 命名约定：
+// - 文件名：snake_case.ts（conversation.ts）
+// - Model 名：PascalCase（Conversation）
+// - Collection 名：复数 snake_case（conversations）
+```
+
+### 5. 🌐 国际化响应规范（必须遵守）
+
+**所有给前端的接口响应必须支持三种语言：`en`（英文）、`zh`（简体中文）、`hk`（繁体中文）。**
+
+#### 5.1 响应消息国际化（强制使用常量）
+
+**🔴 重要规则：必须先定义常量，禁止在响应时直接写字面量对象。**
+
+**✅ 正确：先定义常量，再使用**
+
+```typescript
+// app/utils/i18n-messages.ts
+/**
+ * 国际化消息常量定义
+ * 所有响应消息必须在此文件中预先定义
+ */
+
+// 消息类型定义
+export interface I18nMessage {
+  en: string;
+  zh: string;
+  hk: string;
+}
+
+// 对话模块消息
+export const ConversationMessages = {
+  // 成功消息
+  CREATED: {
+    en: 'Conversation created successfully',
+    zh: '创建对话成功',
+    hk: '創建對話成功'
+  } as I18nMessage,
+  
+  UPDATED: {
+    en: 'Conversation updated successfully',
+    zh: '更新对话成功',
+    hk: '更新對話成功'
+  } as I18nMessage,
+  
+  DELETED: {
+    en: 'Conversation deleted successfully',
+    zh: '删除对话成功',
+    hk: '刪除對話成功'
+  } as I18nMessage,
+  
+  // 错误消息
+  NOT_FOUND: {
+    en: 'Conversation not found',
+    zh: '对话不存在',
+    hk: '對話不存在'
+  } as I18nMessage,
+  
+  ALREADY_EXISTS: {
+    en: 'Conversation with the same name already exists',
+    zh: '已存在同名对话',
+    hk: '已存在同名對話'
+  } as I18nMessage,
+  
+  PERMISSION_DENIED: {
+    en: 'No permission to access this conversation',
+    zh: '无权访问此对话',
+    hk: '無權訪問此對話'
+  } as I18nMessage
+};
+
+// 通用消息
+export const CommonMessages = {
+  // 成功消息
+  SUCCESS: {
+    en: 'Operation successful',
+    zh: '操作成功',
+    hk: '操作成功'
+  } as I18nMessage,
+  
+  // 参数错误
+  INVALID_PARAMETER: {
+    en: 'Invalid parameter',
+    zh: '参数错误',
+    hk: '參數錯誤'
+  } as I18nMessage,
+  
+  REQUIRED_FIELD_MISSING: {
+    en: 'Required field missing',
+    zh: '缺少必填字段',
+    hk: '缺少必填字段'
+  } as I18nMessage,
+  
+  // 系统错误
+  INTERNAL_ERROR: {
+    en: 'Internal server error',
+    zh: '服务器内部错误',
+    hk: '伺服器內部錯誤'
+  } as I18nMessage,
+  
+  SERVICE_UNAVAILABLE: {
+    en: 'Service temporarily unavailable',
+    zh: '服务暂时不可用',
+    hk: '服務暫時不可用'
+  } as I18nMessage
+};
+
+// controller/home/ConversationController.ts
+import { ConversationMessages, CommonMessages } from 'utils/i18n-messages';
+
+export default class ConversationController extends Controller {
+  async create() {
+    const { ctx } = this;
+    await this.validator.create();
+    
+    const user = ctx.state.user;
+    const { title } = ctx.request.body;
+    
+    // 检查是否存在同名对话
+    const { findOne } = (ctx as any).utilsCrud;
+    const existing = await findOne(ctx.model.Conversation, {
+      user_id: new Types.ObjectId(user._id),
+      title,
+      del_flag: 0
+    });
+    
+    if (existing) {
+      // ✅ 正确：使用预定义常量
+      throw ctx.fail(ConversationMessages.ALREADY_EXISTS, 400);
+    }
+    
+    const { createOne } = (ctx as any).utilsCrud;
+    const conversation = await createOne(ctx.model.Conversation, {
+      user_id: new Types.ObjectId(user._id),
+      title,
+      status: 1,
+      del_flag: 0,
+      created_by: user._id
+    });
+    
+    // ✅ 正确：使用预定义常量
+    return ctx.success(conversation, ConversationMessages.CREATED);
+  }
+  
+  async delete() {
+    const { ctx } = this;
+    const { id } = ctx.params;
+    
+    const { deleteOne } = (ctx as any).utilsCrud;
+    const result = await deleteOne(ctx.model.Conversation, { _id: id });
+    
+    if (!result) {
+      // ✅ 正确：使用预定义常量
+      throw ctx.fail(ConversationMessages.NOT_FOUND, 404);
+    }
+    
+    // ✅ 正确：使用预定义常量
+    return ctx.success(null, ConversationMessages.DELETED);
+  }
+}
+```
+
+**❌ 错误：直接在响应中写字面量对象**
+
+```typescript
+// ❌ 错误：直接写字面量对象（禁止）
+throw ctx.fail({
+  en: 'Conversation with the same name already exists',
+  zh: '已存在同名对话',
+  hk: '已存在同名對話'
+}, 400);
+
+return ctx.success(data, {
+  en: 'Conversation created successfully',
+  zh: '创建对话成功',
+  hk: '創建對話成功'
+});
+
+// ❌ 错误：仅单一语言
+throw ctx.fail('已存在同名对话', 400);
+return ctx.success(data, '创建成功');
+```
+
+#### 5.2 响应格式说明
+
+**响应中的 message 必须是从常量文件导入的对象，不是字面量。**
+
+**成功响应**:
+```typescript
+import { ConversationMessages } from 'utils/i18n-messages';
+
+// ✅ 正确：使用常量
+ctx.success(data, ConversationMessages.CREATED)
+
+// 响应格式：
+{
+  code: 0,
+  message: {
+    en: 'Conversation created successfully',
+    zh: '创建对话成功',
+    hk: '創建對話成功'
+  },
+  data: { ... }
+}
+```
+
+**失败响应**:
+```typescript
+import { ConversationMessages } from 'utils/i18n-messages';
+
+// ✅ 正确：使用常量
+throw ctx.fail(ConversationMessages.NOT_FOUND, 404)
+
+// 响应格式：
+{
+  code: 404,
+  message: {
+    en: 'Conversation not found',
+    zh: '对话不存在',
+    hk: '對話不存在'
+  },
+  data: null
+}
+```
+
+**系统错误响应**:
+```typescript
+import { CommonMessages } from 'utils/i18n-messages';
+
+// ✅ 正确：使用常量
+ctx.error('[Tag]', err, CommonMessages.INTERNAL_ERROR)
+
+// 响应格式：
+{
+  code: 500,
+  message: {
+    en: 'Internal server error',
+    zh: '服务器内部错误',
+    hk: '伺服器內部錯誤'
+  },
+  data: { error: '...' }
+}
+```
+
+#### 5.3 消息常量组织结构
+
+**所有消息常量必须按模块组织在 `app/utils/i18n-messages.ts` 文件中。**
+
+**文件结构示例**:
+
+```typescript
+// app/utils/i18n-messages.ts
+export interface I18nMessage {
+  en: string;
+  zh: string;
+  hk: string;
+}
+
+// ============================================================================
+// 通用消息（所有模块共用）
+// ============================================================================
+export const CommonMessages = {
+  // 操作成功
+  SUCCESS: {
+    en: 'Operation successful',
+    zh: '操作成功',
+    hk: '操作成功'
+  } as I18nMessage,
+  
+  CREATED: {
+    en: 'Created successfully',
+    zh: '创建成功',
+    hk: '創建成功'
+  } as I18nMessage,
+  
+  UPDATED: {
+    en: 'Updated successfully',
+    zh: '更新成功',
+    hk: '更新成功'
+  } as I18nMessage,
+  
+  DELETED: {
+    en: 'Deleted successfully',
+    zh: '删除成功',
+    hk: '刪除成功'
+  } as I18nMessage,
+  
+  // 参数错误
+  INVALID_PARAMETER: {
+    en: 'Invalid parameter',
+    zh: '参数错误',
+    hk: '參數錯誤'
+  } as I18nMessage,
+  
+  REQUIRED_FIELD_MISSING: {
+    en: 'Required field missing',
+    zh: '缺少必填字段',
+    hk: '缺少必填字段'
+  } as I18nMessage,
+  
+  INVALID_FORMAT: {
+    en: 'Invalid format',
+    zh: '格式错误',
+    hk: '格式錯誤'
+  } as I18nMessage,
+  
+  // 业务错误
+  NOT_FOUND: {
+    en: 'Resource not found',
+    zh: '资源不存在',
+    hk: '資源不存在'
+  } as I18nMessage,
+  
+  ALREADY_EXISTS: {
+    en: 'Resource already exists',
+    zh: '资源已存在',
+    hk: '資源已存在'
+  } as I18nMessage,
+  
+  PERMISSION_DENIED: {
+    en: 'Permission denied',
+    zh: '权限不足',
+    hk: '權限不足'
+  } as I18nMessage,
+  
+  // 系统错误
+  INTERNAL_ERROR: {
+    en: 'Internal server error',
+    zh: '服务器内部错误',
+    hk: '伺服器內部錯誤'
+  } as I18nMessage,
+  
+  SERVICE_UNAVAILABLE: {
+    en: 'Service temporarily unavailable',
+    zh: '服务暂时不可用',
+    hk: '服務暫時不可用'
+  } as I18nMessage,
+  
+  REQUEST_TIMEOUT: {
+    en: 'Request timeout',
+    zh: '请求超时',
+    hk: '請求超時'
+  } as I18nMessage
+};
+
+// ============================================================================
+// 对话模块消息
+// ============================================================================
+export const ConversationMessages = {
+  CREATED: {
+    en: 'Conversation created successfully',
+    zh: '创建对话成功',
+    hk: '創建對話成功'
+  } as I18nMessage,
+  
+  UPDATED: {
+    en: 'Conversation updated successfully',
+    zh: '更新对话成功',
+    hk: '更新對話成功'
+  } as I18nMessage,
+  
+  DELETED: {
+    en: 'Conversation deleted successfully',
+    zh: '删除对话成功',
+    hk: '刪除對話成功'
+  } as I18nMessage,
+  
+  NOT_FOUND: {
+    en: 'Conversation not found',
+    zh: '对话不存在',
+    hk: '對話不存在'
+  } as I18nMessage,
+  
+  ALREADY_EXISTS: {
+    en: 'Conversation with the same name already exists',
+    zh: '已存在同名对话',
+    hk: '已存在同名對話'
+  } as I18nMessage
+};
+
+// ============================================================================
+// 消息模块消息
+// ============================================================================
+export const MessageMessages = {
+  SENT: {
+    en: 'Message sent successfully',
+    zh: '发送消息成功',
+    hk: '發送消息成功'
+  } as I18nMessage,
+  
+  DELETED: {
+    en: 'Message deleted successfully',
+    zh: '删除消息成功',
+    hk: '刪除消息成功'
+  } as I18nMessage,
+  
+  NOT_FOUND: {
+    en: 'Message not found',
+    zh: '消息不存在',
+    hk: '消息不存在'
+  } as I18nMessage
+};
+
+// ============================================================================
+// 用户模块消息
+// ============================================================================
+export const UserMessages = {
+  LOGIN_SUCCESS: {
+    en: 'Login successful',
+    zh: '登录成功',
+    hk: '登錄成功'
+  } as I18nMessage,
+  
+  LOGOUT_SUCCESS: {
+    en: 'Logout successful',
+    zh: '退出成功',
+    hk: '退出成功'
+  } as I18nMessage,
+  
+  INVALID_CREDENTIALS: {
+    en: 'Invalid username or password',
+    zh: '用户名或密码错误',
+    hk: '用戶名或密碼錯誤'
+  } as I18nMessage,
+  
+  NOT_FOUND: {
+    en: 'User not found',
+    zh: '用户不存在',
+    hk: '用戶不存在'
+  } as I18nMessage
+};
+
+// 根据业务模块继续扩展...
+```
+
+**使用示例**:
+
+```typescript
+// controller/home/ConversationController.ts
+import { 
+  ConversationMessages, 
+  CommonMessages 
+} from 'utils/i18n-messages';
+
+export default class ConversationController extends Controller {
+  async list() {
+    const { ctx } = this;
+    // ...
+    return ctx.success(result, CommonMessages.SUCCESS);
+  }
+  
+  async create() {
+    const { ctx } = this;
+    // ...
+    return ctx.success(conversation, ConversationMessages.CREATED);
+  }
+  
+  async update() {
+    const { ctx } = this;
+    // ...
+    if (!conversation) {
+      throw ctx.fail(ConversationMessages.NOT_FOUND, 404);
+    }
+    return ctx.success(updated, ConversationMessages.UPDATED);
+  }
+}
+```
+
+#### 5.4 新增消息常量规范
+
+**当需要新增响应消息时，必须遵循以下步骤：**
+
+**步骤 1: 在 i18n-messages.ts 中定义常量**
+
+```typescript
+// app/utils/i18n-messages.ts
+
+// 找到对应的模块，或创建新的模块分组
+export const TripMessages = {
+  CREATED: {
+    en: 'Trip created successfully',
+    zh: '创建行程成功',
+    hk: '創建行程成功'
+  } as I18nMessage,
+  
+  INVALID_DATE_RANGE: {
+    en: 'Invalid date range',
+    zh: '日期范围无效',
+    hk: '日期範圍無效'
+  } as I18nMessage,
+  
+  // 新增的消息...
+};
+```
+
+**步骤 2: 在 Controller 中导入并使用**
+
+```typescript
+// controller/home/TripController.ts
+import { TripMessages, CommonMessages } from 'utils/i18n-messages';
+
+export default class TripController extends Controller {
+  async create() {
+    const { ctx } = this;
+    // ...
+    return ctx.success(trip, TripMessages.CREATED);
+  }
+}
+```
+
+**步骤 3: 如果是通用消息，优先使用 CommonMessages**
+
+```typescript
+// ✅ 优先使用通用消息
+return ctx.success(data, CommonMessages.CREATED);  // 而不是每个模块都定义 CREATED
+
+// ✅ 仅在消息有特殊性时才定义模块专属消息
+return ctx.success(trip, TripMessages.DATE_CONFIRMED);  // 行程特有消息
+```
+
+#### 5.5 注意事项
+
+1. **🔴 必须先定义常量**: 禁止在响应时直接写 `{ en, zh, hk }` 字面量
+2. **🔴 必须提供三种语言**: en, zh, hk 三者缺一不可
+3. **✅ 保持语义一致**: 三种语言表达的意思必须相同
+4. **✅ 繁简转换**: zh 是简体中文，hk 是繁体中文
+5. **✅ 标点符号**: 
+   - 中文使用中文标点（。、，）
+   - 英文使用英文标点（. ,）
+6. **✅ 专业术语**: 保持一致的术语翻译
+7. **✅ 模块化组织**: 按业务模块分组（CommonMessages/ConversationMessages/TripMessages）
+8. **✅ 优先复用**: 通用消息优先使用 CommonMessages，避免重复定义
+9. **✅ 命名规范**: 常量名使用 UPPER_SNAKE_CASE（如 ALREADY_EXISTS, NOT_FOUND）
+10. **✅ 类型标注**: 所有消息对象都应标注 `as I18nMessage`
+
+---
+
+## 🎯 架构层次规则
+
+### 代码分层（⚠️ 本项目不使用 Service 层）
+
+```
+Controller (控制器层) - 业务逻辑 + 参数校验 + 鉴权 + 响应
+    ↓ 使用
+Utils (工具层) - 通用函数（调用 ≥2 次）
+    ↓ 调用
+Model (数据模型层) - Schema 定义
+```
+
+### 职责划分
+
+- **Controller**: 
+  - ✅ 参数校验（validator）
+  - ✅ 鉴权检查（middleware）
+  - ✅ **业务逻辑实现** ⭐（本项目特色）
+  - ✅ 数据库操作（通过 ctx.utilsCrud）
+  - ✅ 统一响应（responseHelper）
+  
+- **Utils** (app/utils/):
+  - ✅ 通用工具函数（调用次数 ≥2）
+  - ✅ 纯函数（无副作用）
+  - ✅ 单一职责
+  - ❌ 不包含业务逻辑
+
+- **Model**:
+  - ✅ Schema 定义
+  - ✅ 索引定义
+  - ✅ 数据验证规则
+  - ✅ 静态方法/实例方法（可选）
+
+### 代码示例
+
+#### ✅ 正确：业务逻辑写在 Controller
+
+```typescript
+// controller/home/ConversationController.ts
+export default class ConversationController extends Controller {
+  private readonly validator: ConversationValidator;
+
+  constructor(ctx: any) {
+    super(ctx);
+    this.validator = new ConversationValidator(ctx);
+  }
+
+  async list() {
+    const { ctx } = this;
     
     // 1. 参数校验
-    const query = await validateJoi(Joi.object({
-        page: Joi.number().integer().min(1).default(1),
-        pageSize: Joi.number().integer().min(1).max(100).default(10),
-        keyword: Joi.string().trim().optional(),
-    }), 'query');
+    await this.validator.index();
     
-    // 2. 构建过滤条件
-    const filter: any = { del_flag: 0 };
-    if (query.keyword) {
-        filter.$or = [
-            { title: { $regex: query.keyword, $options: 'i' } },
-            { summary: { $regex: query.keyword, $options: 'i' } }
-        ];
+    // 2. 获取用户信息（鉴权后）
+    const user = ctx.state.user;
+    const { page, pageSize, keyword } = ctx.query;
+    
+    // 3. ✅ 业务逻辑直接写在这里
+    const query: any = {
+      user_id: new Types.ObjectId(user._id),
+      del_flag: 0,
+      status: 1
+    };
+    
+    // 关键字搜索
+    if (keyword) {
+      query.title = { $regex: keyword, $options: 'i' };
     }
     
-    // 3. 执行分页查询
-    const { paginate } = utilsCrud;
-    const data = await paginate(ctx.model.Article, filter, {
-        page: query.page,
-        pageSize: query.pageSize,
-        sort: { created_at: -1, _id: -1 },  // 🔴 双字段排序保证稳定性
-        projection: { _id: 1, title: 1, summary: 1, created_at: 1 },
-        lean: true,  // 🔴 返回纯对象（性能优化）
+    // 4. 使用 CRUD 工具查询
+    const { paginate } = (ctx as any).utilsCrud;
+    const result = await paginate(
+      ctx.model.Conversation,
+      query,
+      { 
+        page, 
+        pageSize, 
+        sort: { created_at: -1 },
+        select: '_id title status created_at updated_at'
+      }
+    );
+    
+    // 5. 统一响应
+    return ctx.success(result, '查询成功');
+  }
+  
+  async create() {
+    const { ctx } = this;
+    
+    // 1. 参数校验
+    await this.validator.create();
+    
+    // 2. 获取用户信息
+    const user = ctx.state.user;
+    const { title } = ctx.request.body;
+    
+    // 3. ✅ 业务逻辑直接写在这里
+    // 检查是否存在同名对话
+    const { findOne } = (ctx as any).utilsCrud;
+    const existing = await findOne(ctx.model.Conversation, {
+      user_id: new Types.ObjectId(user._id),
+      title,
+      del_flag: 0
     });
     
-    return ctx.success(data);
-}
-```
-
-**查询单条（findById 自动校验）**:
-```typescript
-public async detail() {
-    const { ctx } = this;
-    const { utilsCrud } = ctx as any;
+    if (existing) {
+      throw ctx.fail('已存在同名对话', 400);
+    }
     
-    // findById 自动校验 24 位 hex ID，自动从 ctx.query.id 提取
-    const { findById } = utilsCrud;
-    const article = await findById(ctx.model.Article, ctx, {
-        populate: 'author_id',
-        lean: true,
+    // 4. 创建新对话
+    const { createOne } = (ctx as any).utilsCrud;
+    const conversation = await createOne(ctx.model.Conversation, {
+      user_id: new Types.ObjectId(user._id),
+      title,
+      status: 1,
+      del_flag: 0,
+      created_by: user._id
     });
     
-    if (!article) {
-        throw ctx.fail('文章不存在', 404);
-    }
-    
-    return ctx.success(article);
+    // 5. 统一响应
+    return ctx.success(conversation, '创建成功');
+  }
 }
 ```
 
-**批量新增/更新（支持 upsert）**:
+#### ✅ 正确：通用函数封装到 Utils（调用 ≥2 次）
+
 ```typescript
-public async add() {
-    const { ctx } = this;
-    const { Joi, validateJoi, utilsCrud } = ctx as any;
-    
-    // 支持两种格式
-    await validateJoi(Joi.alternatives().try(
-        // 格式1：数组直投（全部新增）
-        Joi.array().items(Joi.object({
-            title: Joi.string().required(),
-        })).min(1),
-        
-        // 格式2：包裹对象（支持 upsert）
-        Joi.object({
-            docs: Joi.array().items(Joi.object()).min(1).required(),
-            matchFields: Joi.alternatives().try(Joi.string(), Joi.array().items(Joi.string())),
-            onExist: Joi.string().valid('update', 'skip').default('update'),
-            ordered: Joi.boolean().default(true),
-        })
-    ), 'body');
-    
-    const { saveMany } = utilsCrud;
-    const result = await saveMany(ctx.model.Article, ctx);
-    
-    return ctx.success(result, '批量保存成功');
+// app/utils/conversation-helper.ts
+import { Types } from 'mongoose';
+
+/**
+ * 构建对话查询条件
+ * @param userId 用户ID
+ * @param filters 额外过滤条件
+ */
+export function buildConversationQuery(userId: string, filters: any = {}) {
+  return {
+    user_id: new Types.ObjectId(userId),
+    del_flag: 0,
+    status: 1,
+    ...filters
+  };
 }
-```
 
-**批量删除（带保护）**:
-```typescript
-public async delete() {
-    const { ctx } = this;
-    const { Joi, validateJoi, utilsCrud } = ctx as any;
-    
-    // 校验删除参数
-    await validateJoi(Joi.object({
-        ids: Joi.array().items(Joi.string().length(24).hex()),
-        filter: Joi.object().unknown(true),
-        all: Joi.boolean().default(false),
-    }).or('ids', 'filter', 'all'), 'body');
-    
-    const { body } = ctx.request;
-    
-    // 🔴 删除保护：防止误删全表
-    if ((!body.ids || body.ids.length === 0) && !body.filter && body.all !== true) {
-        throw ctx.fail('缺少删除条件', 400);
-    }
-    
-    const { deleteMany } = utilsCrud;
-    const result = await deleteMany(ctx.model.Article, ctx);
-    
-    return ctx.success({ deleted: result.deleted }, '删除成功');
+/**
+ * 格式化对话列表
+ * @param conversations 对话列表
+ */
+export function formatConversationList(conversations: any[]) {
+  return conversations.map(conv => ({
+    id: conv._id.toString(),
+    title: conv.title,
+    created_at: conv.created_at,
+    updated_at: conv.updated_at,
+    message_count: conv.message_count || 0
+  }));
 }
-```
 
-**强制规则** 🔴:
-1. 禁止直接调用 `ctx.model.*.find()` 等方法，必须使用 `utilsCrud`
-2. 分页查询必须使用 `paginate`
-3. 按 ID 查询必须使用 `findById`（自动校验格式）
-4. 所有查询优先使用 `lean: true`（性能优化）
-5. 分页排序使用双字段：`{ created_at: -1, _id: -1 }`
+// controller/home/ConversationController.ts
+import { buildConversationQuery, formatConversationList } from 'utils/conversation-helper';
 
-### 6. 参数校验规范（validatorHelper）
-
-**注入方式**: 通过 `validatorHelper` 中间件全局注入 `ctx.Joi` 和 `ctx.validateJoi`
-
-**参考**: `app/middleware/validatorHelper.ts` 和 `chat/README.md`
-
-**标准模式**:
-```typescript
-public async create() {
+export default class ConversationController extends Controller {
+  async list() {
     const { ctx } = this;
-    const { Joi, validateJoi } = ctx as any;
+    const user = ctx.state.user;
     
-    // 定义校验规则
-    const bodySchema = Joi.object({
-        // 必填字符串
-        trip_name: Joi.string().trim().min(1).max(100).required()
-            .messages({
-                'string.empty': '行程名称不能为空',
-                'string.max': '行程名称不能超过 100 字符',
-            }),
-        
-        // 枚举值
-        share_type: Joi.string().valid('public', 'private', 'link').default('public'),
-        
-        // 数值范围
-        traveler_count: Joi.number().integer().min(1).max(50).required(),
-        
-        // 日期格式
-        start_date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required(),
-        
-        // 数组
-        tags: Joi.array().items(Joi.string().trim().min(1)).max(10).default([]),
-        
-        // 嵌套对象
-        owner: Joi.object({
-            id: Joi.string().length(24).hex().required(),
-            name: Joi.string().required(),
-        }).required(),
+    // ✅ 第一次调用：使用封装的工具函数
+    const query = buildConversationQuery(user._id, { 
+      title: { $regex: ctx.query.keyword, $options: 'i' } 
     });
     
-    // 执行校验
-    const body = await validateJoi(bodySchema, 'body');
+    const { paginate } = (ctx as any).utilsCrud;
+    const result = await paginate(ctx.model.Conversation, query, { page: 1, pageSize: 10 });
     
-    // 业务逻辑...
-}
-```
-
-**常用校验规则**:
-```typescript
-// 字符串
-Joi.string().trim().min(1).max(100).pattern(/^[a-zA-Z0-9]+$/).uri().email()
-
-// 数值
-Joi.number().integer().min(0).max(100).positive()
-
-// 枚举
-Joi.string().valid('draft', 'published', 'archived')
-Joi.number().valid(...StatusEnumValues)
-
-// 数组
-Joi.array().items(Joi.string()).min(1).max(10).unique()
-
-// ObjectId
-Joi.string().length(24).hex()
-
-// 日期
-Joi.date().iso()
-Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/)
-```
-
-**多来源参数校验**:
-```typescript
-// Query 参数
-const query = await validateJoi(querySchema, 'query');
-
-// Body 参数
-const body = await validateJoi(bodySchema, 'body');
-
-// Params 参数
-const params = await validateJoi(paramsSchema, 'params');
-
-// Headers 参数
-const headers = await validateJoi(headersSchema, 'headers');
-```
-
-**默认选项**（参考 `validatorHelper.ts`）:
-- `stripUnknown: true` - 清洗未知字段
-- `abortEarly: false` - 返回所有错误
-- `convert: true` - 类型转换
-
-### 7. 统一响应规范（responseHelper）
-
-**注入方式**: 通过 `responseHelper` 中间件全局注入 `ctx.success/fail/error`
-
-**参考**: `app/middleware/responseHelper.ts` 和 `chat/README.md`
-
-**核心方法**:
-
-| 方法 | 用途 | 响应体 | 使用方式 |
-|------|-----|-------|---------|
-| `ctx.success` | 成功响应 | `{ code: 0, message, data }` | `return ctx.success(data, message)` |
-| `ctx.fail` | 业务失败 | 构造错误对象 | `throw ctx.fail(message, code)` |
-| `ctx.error` | 异常兜底 | `{ code: 4xx/5xx, message, data }` | `return ctx.error(tag, err, message)` |
-
-**成功响应模式**:
-```typescript
-// 返回数据 + 自定义消息
-return ctx.success({ trip_id: '123', status: 'ok' }, '创建成功');
-// 响应: { code: 0, message: '创建成功', data: { trip_id: '123', status: 'ok' } }
-
-// 返回数据（message 默认 'ok'）
-return ctx.success({ list: [...], total: 100 });
-// 响应: { code: 0, message: 'ok', data: { list: [...], total: 100 } }
-
-// 无数据返回
-return ctx.success(null, '删除成功');
-// 响应: { code: 0, message: '删除成功', data: null }
-```
-
-**业务失败模式**:
-```typescript
-// 🔴 注意：ctx.fail 仅构造错误对象，必须 throw 才会生效
-
-// 默认 400 错误
-if (!trip) {
-    throw ctx.fail('行程不存在');
-}
-
-// 指定错误码
-if (privilege < PrivilegeEnum.Trial) {
-    throw ctx.fail('权限不足，请升级会员', 403);
-}
-
-// 业务规则校验失败
-if (moment(endDate).isBefore(startDate)) {
-    throw ctx.fail('结束日期不能早于开始日期', 422);
-}
-```
-
-**标准控制器模式**:
-```typescript
-export default class TripController extends Controller {
-    public async getTrip() {
-        const { ctx } = this;
-        const tag = 'home.trip.getTrip';  // 🔴 格式：分组.控制器.方法
-        
-        try {
-            // 1. 参数校验
-            const { Joi, validateJoi } = ctx as any;
-            await validateJoi(Joi.object({
-                id: Joi.string().length(24).hex().required(),
-            }), 'query');
-            
-            // 2. 数据库操作
-            const { findById } = ctx.utilsCrud;
-            const trip = await findById(ctx.model.Trip, ctx, {
-                populate: 'owner_id',
-                lean: true,
-            });
-            
-            // 3. 业务校验
-            if (!trip) {
-                throw ctx.fail('行程不存在', 404);
-            }
-            
-            // 4. 成功响应
-            return ctx.success(trip);
-            
-        } catch (err) {
-            // 5. 异常兜底
-            return ctx.error(tag, err, '获取行程失败');
-        }
-    }
-}
-```
-
-**错误分级规则**:
-
-| HTTP Code | 响应 code | 场景 | 日志级别 |
-|-----------|----------|------|---------|
-| 200 | 0 | 成功 | info |
-| 200 | 400 | 参数错误 | warn |
-| 200 | 401 | 未授权 | warn |
-| 200 | 403 | 权限不足 | warn |
-| 200 | 404 | 资源不存在 | warn |
-| 200 | 422 | 业务规则失败 | warn |
-| 200 | 500 | 系统异常 | error |
-| 200 | 502 | 上游服务异常 | error |
-
-**注意**: 项目默认所有响应 HTTP 状态码都是 200，通过 `body.code` 区分成功/失败
-
-**强制规则** 🔴:
-1. 禁止直接设置 `ctx.body`
-2. `ctx.success/ctx.error` 后必须 `return`
-3. `ctx.fail` 必须 `throw`，不能 `return`
-4. 所有 try-catch 必须有 `ctx.error` 兜底
-5. tag 格式：`分组.控制器.方法`
-
-### 8. SSE 推送实现规范
-
-**架构概览**:
-- 核心库: `ssekify` (app.sse)
-- 初始化位置: `app.ts → willReady()`
-- Redis 发布订阅: 跨实例消息同步
-
-**服务端实现 - 建立 SSE 连接**（参考 `app/controller/internal/sseController.ts`）:
-
-```typescript
-// 路由配置（app/routes/internal/index.ts）
-const baseAuth = app.middleware.userAuth({ level: 'basic' });
-sub.get('/sse', baseAuth, internal.sseController.stream);
-
-// 控制器实现
-import { Controller } from 'egg';
-import { PassThrough } from 'stream';
-
-export default class SseController extends Controller {
-    public async stream() {
-        const { ctx, app } = this;
-        ctx.body = new PassThrough();  // 🔴 创建流
-        const tag = 'internal.sse.stream';
-        
-        try {
-            // 1. 获取用户 ID
-            const userId = ctx.query.userId || ctx.state.user?._id?.toString();
-            if (!userId) {
-                throw ctx.fail('userId is required');
-            }
-            
-            // 2. 注册 SSE 连接
-            app.sse.registerConnection(userId, ctx.res, { 
-                rooms: ['global']  // 可选：加入房间
-            });
-            
-            ctx.logger.info(`${tag} open: user=${userId}`);
-            
-            // 3. 监听断开
-            ctx.res.on('close', () => {
-                ctx.logger.info(`${tag} closed: user=${userId}`);
-            });
-            
-            // 4. 发送初始心跳
-            ctx.body.write(`data: ${JSON.stringify({ type: 'connected', time: new Date() })}\n\n`);
-            
-        } catch (err) {
-            return ctx.error(tag, err, 'SSE 连接失败');
-        }
-    }
-}
-```
-
-**服务端实现 - 推送消息**（参考 `app/controller/internal/itineraryController.ts`）:
-
-```typescript
-// 路由配置（内部鉴权）
-const internalAuth = app.middleware.internalAuth();
-sub.post('/itinerary/callback/progress', internalAuth, itinerary.progress);
-
-// 控制器实现（Agent 回调场景）
-export default class ItineraryController extends Controller {
-    public async progress() {
-        const { ctx, app } = this;
-        const tag = 'internal.itinerary.progress';
-        
-        try {
-            // 1. 参数校验
-            const { Joi, validateJoi } = ctx as any;
-            const value = await validateJoi(Joi.object({
-                type: Joi.string().valid('itinerary').required(),
-                phase: Joi.string().valid('start', 'progress', 'done', 'error').required(),
-                user_id: Joi.string().required(),
-                request_id: Joi.string().required(),
-                payload: Joi.object().optional(),
-                error: Joi.any().optional(),
-            }), 'body');
-            
-            const { user_id, request_id, payload, phase, error } = value;
-            
-            // 2. 发布 SSE 消息（跨实例广播）
-            app.sse.publish(
-                {
-                    type: 'itinerary',
-                    requestId: request_id,
-                    phase,
-                    payload,
-                    error,
-                },
-                [user_id]  // 🔴 目标用户 ID 数组
-            );
-            
-            return ctx.success({ status: 'published' });
-            
-        } catch (err) {
-            return ctx.error(tag, err, '推送失败');
-        }
-    }
-}
-```
-
-**客户端对接**:
-```typescript
-// 建立连接（支持 Query 传 Token）
-const token = localStorage.getItem('token');
-const userId = getUserId();
-
-const eventSource = new EventSource(
-    `/internal/sse?userId=${userId}&authorization=Bearer ${token}`
-);
-
-// 监听消息
-eventSource.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log('SSE message:', data);
+    // ✅ 使用格式化工具
+    result.list = formatConversationList(result.list);
     
-    if (data.type === 'itinerary') {
-        handleItineraryUpdate(data);
-    }
-};
-
-// 监听错误（浏览器会自动重连）
-eventSource.onerror = (error) => {
-    console.error('SSE error:', error);
-};
-
-// 断开连接
-eventSource.close();
-```
-
-**SSE 高级特性**:
-```typescript
-// 1. 房间机制（分组推送）
-app.sse.registerConnection(userId, ctx.res, { 
-    rooms: ['trip-editing', `project-${projectId}`] 
-});
-app.sse.publishToRoom('trip-editing', data);
-
-// 2. 在线状态检查
-if (app.sse.isUserOnline(userId)) {
-    app.sse.publish(data, [userId]);
-}
-
-// 3. 批量推送
-app.sse.publishBatch([
-    { data: msg1, userIds: [user1] },
-    { data: msg2, userIds: [user2, user3] }
-]);
-```
-
-**强制规则** 🔴:
-1. SSE 连接必须鉴权（使用 userAuth）
-2. 禁止在 SSE 连接中进行重业务逻辑
-3. 消息推送必须指定目标用户
-4. 连接断开必须记录日志
-5. 所有消息必须包含 `type` 字段
-
-### 9. HTTP 请求规范（httpHelper）
-
-**注入方式**: 通过 `httpHelper` 中间件全局注入 `ctx.http`
-
-**参考**: `app/middleware/httpHelper.ts` 和 `chat/README.md`
-
-**方法总览**:
-
-| 方法 | 用途 | 返回值 |
-|------|-----|-------|
-| `postJSON` | POST JSON 数据 | `Promise<any>` |
-| `getJSON` | GET JSON 数据 | `Promise<any>` |
-| `fetchJSON` | 通用 JSON 请求 | `Promise<any>` |
-| `getStream` | GET 流数据 | `Promise<{ stream, response, ... }>` |
-| `download` | 下载文件 | `Promise<{ stream, response, ... }>` |
-| `postForm` | POST 表单数据 | `Promise<any>` |
-| `getText` | GET 纯文本 | `Promise<string>` |
-| `postText` | POST 纯文本 | `Promise<string>` |
-
-**标准 JSON 请求**:
-```typescript
-public async callUpstream() {
+    return ctx.success(result);
+  }
+  
+  async detail() {
     const { ctx } = this;
-    const tag = 'home.trip.callUpstream';
+    const user = ctx.state.user;
     
-    try {
-        const data = await ctx.http.postJSON(
-            tag,
-            'https://api.example.com/trips',
-            { trip_name: '东京之旅', days: 7 },
-            {
-                timeoutMs: 15000,
-                retries: 1,
-                idempotencyKey: uuid(),
-                expectedStatuses: [200, 201],
-                map4xxToFail: true,
-            }
-        );
-        
-        return ctx.success(data);
-    } catch (err) {
-        return ctx.error(tag, err, '上游调用失败');
+    // ✅ 第二次调用：证明封装是必要的
+    const query = buildConversationQuery(user._id, { _id: ctx.params.id });
+    
+    const { findOne } = (ctx as any).utilsCrud;
+    const conversation = await findOne(ctx.model.Conversation, query);
+    
+    if (!conversation) {
+      throw ctx.fail('对话不存在', 404);
     }
+    
+    return ctx.success(conversation);
+  }
 }
 ```
 
-**流式下载**:
+#### ❌ 错误：不要创建 Service
+
 ```typescript
-public async downloadFile() {
+// ❌ 错误：不要创建新的 Service 文件
+// service/ConversationService.ts
+export default class ConversationService extends Service {
+  async list(userId: string) {
+    // ❌ 不要这样做，业务逻辑应该在 Controller
+  }
+  
+  async create(userId: string, title: string) {
+    // ❌ 不要这样做
+  }
+}
+
+// ❌ 错误：Controller 不应该调用 Service
+export default class ConversationController extends Controller {
+  async list() {
     const { ctx } = this;
-    const tag = 'home.media.download';
-    
-    try {
-        const { stream, contentType, contentLength } = await ctx.http.download(
-            tag,
-            fileUrl,
-            { timeoutMs: 30000 }
-        );
-        
-        ctx.set('Content-Type', contentType || 'application/octet-stream');
-        if (contentLength) {
-            ctx.set('Content-Length', String(contentLength));
-        }
-        ctx.set('Content-Disposition', 'attachment; filename="file.pdf"');
-        
-        ctx.body = stream;
-        
-    } catch (err) {
-        return ctx.error(tag, err, '下载失败');
-    }
+    // ❌ 错误：不要调用 Service
+    const result = await ctx.service.conversationService.list(user._id);
+    return ctx.success(result);
+  }
 }
 ```
 
-**表单上传**:
-```typescript
-public async uploadFile() {
-    const { ctx } = this;
-    const tag = 'home.media.upload';
-    
-    try {
-        const fd = new (global as any).FormData();
-        fd.append('file', fileBuffer, 'avatar.jpg');
-        fd.append('category', 'avatar');
-        
-        const result = await ctx.http.postForm(
-            tag,
-            'https://api.example.com/upload',
-            fd,
-            { timeoutMs: 30000 }
-        );
-        
-        return ctx.success(result);
-    } catch (err) {
-        return ctx.error(tag, err, '上传失败');
-    }
-}
-```
+---
 
-**错误处理**:
-```typescript
-try {
-    const data = await ctx.http.postJSON(tag, url, payload);
-    return ctx.success(data);
-} catch (err) {
-    // 4xx: ctx.fail 抛出的业务错误（不重试）
-    // 5xx/网络/超时: 已按配置重试，仍失败则抛出 Error（附 status）
-    return ctx.error(tag, err, '上游处理失败');
-}
-```
+## ✅ 快速检查清单
 
-### 10. 接口开发检查清单
+### 代码风格检查
+- [ ] 使用 **PascalCase** 命名 Controller/Service/Model
+- [ ] 使用 **camelCase** 命名方法和变量
+- [ ] 使用 **单引号**
+- [ ] 所有语句结尾有**分号**
+- [ ] 使用 **4 空格**缩进
+- [ ] TypeScript 类型标注完整
 
-#### 开发前检查 ✅
-- [ ] 确认 Model 是否存在（不存在则创建）
-- [ ] 确认路由分组（home/admin/internal）
-- [ ] 确认鉴权方式（public/basic/strict/dbToken/internalAuth）
-- [ ] 确认是否需要 SSE 推送
+### 中间件使用检查（🔴 强制）
+- [ ] CRUD 操作使用 **ctx.utilsCrud** ⭐
+- [ ] 响应使用 **ctx.success / ctx.fail / ctx.error** ⭐
+- [ ] 接口鉴权使用 **userAuth middleware** ⭐
+- [ ] 参数校验使用 **Validator + ctx.validateJoi** ⭐
+- [ ] HTTP 请求使用 **ctx.http**（禁止直接用 axios/fetch）⭐
+- [ ] 内部服务路由使用 **internalAuth** 而非 userAuth
 
-#### Model 定义检查 ✅
-- [ ] 包含必备字段（del_flag, created_by, updated_by）
-- [ ] 启用 timestamps（created_at, updated_at）
-- [ ] 查询字段添加索引
-- [ ] 枚举字段使用 enum 约束
-- [ ] 字段命名符合规范
+### 数据库操作检查（🔴 强制）
+- [ ] 修复代码前**先查询数据库实际结构** ⭐
+- [ ] 使用正确的 **Model 名称和字段**
+- [ ] 所有写操作（insert/update）**等待用户确认** ⭐
+- [ ] 删除操作**明确说明原因和影响** ⭐
+- [ ] 使用 **Types.ObjectId** 转换 ObjectId 字段
 
-#### 路由配置检查 ✅
-- [ ] 路由文件放在正确目录
-- [ ] 使用 RouterGroup 分组
-- [ ] 正确应用中间件
-- [ ] RESTful 风格命名
+### 架构分层检查（⚠️ 不使用 Service 层）
+- [ ] **业务逻辑写在 Controller** ⭐
+- [ ] **通用函数封装在 Utils**（调用 ≥2 次）⭐
+- [ ] Model 仅定义 **Schema 和索引**
+- [ ] **不创建新的 Service 文件** ⭐
+- [ ] Utils 函数为**纯函数**（无副作用）
+- [ ] 历史 Service 代码保持现状（不强制改造）
 
-#### 控制器实现检查 ✅
-- [ ] 定义清晰的 tag（格式：`分组.控制器.方法`）
-- [ ] 使用 try-catch 包裹
-- [ ] 参数校验使用 ctx.validateJoi
-- [ ] 数据库操作使用 ctx.utilsCrud
-- [ ] 成功使用 ctx.success
-- [ ] 失败使用 throw ctx.fail
-- [ ] 异常使用 ctx.error 兜底
-- [ ] 记录关键日志
+### 路由配置检查
+- [ ] 路由使用 **egg-router-group** 分组
+- [ ] 前台路由在 **/home** 前缀下
+- [ ] 管理路由在 **/admin** 前缀下
+- [ ] 内部路由在 **/internal** 前缀下
+- [ ] 每个路由配置正确的**鉴权中间件**
 
-#### 参数校验检查 ✅
-- [ ] 所有必填参数使用 .required()
-- [ ] 字符串参数使用 .trim()
-- [ ] 数值参数设置范围
-- [ ] 枚举参数使用 .valid()
-- [ ] 数组参数限制长度
-- [ ] 自定义错误消息
+### TypeScript 类型检查
+- [ ] 使用 **interface** 定义复杂类型
+- [ ] 使用 **enum** 定义枚举
+- [ ] Controller/Service 继承正确的基类
+- [ ] 避免使用 **as any**（除非必要）
+- [ ] 配置正确的**路径别名**
 
-#### 响应处理检查 ✅
-- [ ] 成功后 return ctx.success
-- [ ] 失败 throw ctx.fail
-- [ ] 异常 return ctx.error
-- [ ] 不直接设置 ctx.body
+### 错误处理检查
+- [ ] 使用 **try-catch** 包裹异步操作
+- [ ] 业务错误抛出 **ctx.fail(message, 400)**
+- [ ] 系统错误使用 **ctx.error(tag, err, message)**
+- [ ] 记录错误日志使用 **ctx.logger.error**
+- [ ] 不暴露敏感错误信息给前端
 
-#### SSE 实现检查 ✅（如适用）
-- [ ] 使用 PassThrough 创建流
-- [ ] 调用 app.sse.registerConnection
-- [ ] 监听 ctx.res.on('close')
-- [ ] 消息包含 type 字段
-- [ ] 记录连接/断开日志
-- [ ] 使用 userAuth 鉴权
-
-#### 测试与文档检查 ✅
-- [ ] 使用 .http 文件手动测试
-- [ ] 测试所有路径（成功/失败/边界）
-- [ ] 更新 CHANGELOG.md
-- [ ] 更新 README.md（如有 API 变更）
-- [ ] 检查日志无敏感信息
+### 国际化检查
+- [ ] **所有消息在 i18n-messages.ts 中定义常量** ⭐ 🔴
+- [ ] **禁止在响应时直接写 { en, zh, hk } 字面量** ⭐ 🔴
+- [ ] 所有响应消息包含 **en, zh, hk** 三种语言 ⭐
+- [ ] 成功消息使用 **ctx.success(data, MessageConstant)** ⭐
+- [ ] 失败消息使用 **ctx.fail(MessageConstant, code)** ⭐
+- [ ] 系统错误使用 **ctx.error(tag, err, MessageConstant)** ⭐
+- [ ] 三种语言语义保持一致
+- [ ] 繁简转换正确（zh=简体，hk=繁体）
+- [ ] 通用消息优先使用 CommonMessages
+- [ ] 常量命名使用 UPPER_SNAKE_CASE
 
 ---
 
-## 项目特定规则
+**最后更新**: 2025-11-25
 
-### TypeScript 路径别名（必须遵循）
-
-```typescript
-// ✅ 正确：使用路径别名
-import { TripStatusEnum } from 'enum/trip/trip_status'
-import ExError from 'utils/ex-error/ex_error'
-
-// ❌ 错误：使用相对路径穿越多层
-import { TripStatusEnum } from '../../../typings/enum/trip/trip_status'
-```
-
-### 错误处理（必须遵循）
-
-使用 `ExError` 自定义错误类，保留错误原因链：
-
-```typescript
-import ExError from 'utils/ex-error/ex_error'
-
-try {
-    const result = await externalApiCall()
-} catch (error) {
-    // ✅ 正确：保留原始错误
-    throw new ExError('EXTERNAL_API_ERROR', '调用外部 API 失败', { cause: error })
-}
-
-// ❌ 错误：丢失错误上下文
-throw new Error('调用外部 API 失败')
-```
-
-### 日志安全（必须遵循）
-
-日志中禁止记录敏感信息：
-
-```typescript
-// ❌ 错误：记录完整 URL（可能包含 token）
-this.ctx.logger.info('请求 OpenAI API', url)
-
-// ✅ 正确：去敏后记录
-this.ctx.logger.info('请求 OpenAI API', { 
-    endpoint: '/v1/chat/completions',
-    model: 'gpt-4'
-})
-
-// ❌ 错误：记录密码
-this.ctx.logger.info('用户登录', { username, password })
-
-// ✅ 正确：不记录密码
-this.ctx.logger.info('用户登录', { username })
-```
-
----
-
-**参考文档**: 
-- [chat/README.md](../../chat/README.md) - 完整的中间件使用文档
-- [guidelines/v2.md](../guidelines/v2.md) - 通用开发规范
-
-export default class AppBootHook implements ILifeCycleBoot {
-    async didLoad() {
-        // ✅ 同步加载配置（确保启动顺序）
-        const nacosConfig = await nacosClient.getConfig({
-            dataId: 'chat-service',
-            group: 'DEFAULT_GROUP'
-        })
-        
-        // ✅ 订阅配置热更新
-        nacosClient.subscribe({
-            dataId: 'chat-service',
-            group: 'DEFAULT_GROUP'
-        }, content => {
-            this.app.logger.info('Nacos 配置更新', content)
-        })
-    }
-}
-```
-
-### 环境变量
-
-敏感信息通过环境变量注入：
-
-```bash
-# .env (本地开发，不提交到版本控制)
-OPENAI_API_KEY=sk-xxxxx
-MONGODB_URI=mongodb://localhost:27017/chat
-REDIS_HOST=localhost
-REDIS_PORT=6379
-```
-
----
-
-## 安全与合规
-
-### 敏感信息清洗（强制）
-
-1. **API Keys**: 禁止硬编码，使用环境变量
-2. **日志去敏**: 使用查询形状而非具体值
-   ```typescript
-   // ❌ 错误
-   logger.info('查询用户', { email: 'user@example.com', phone: '13812345678' })
-   
-   // ✅ 正确
-   logger.info('查询用户', { queryType: 'email', resultCount: 1 })
-   ```
-3. **错误信息**: 不暴露内部路径和数据库结构
-   ```typescript
-   // ❌ 错误
-   throw new Error(`文件不存在: /var/app/uploads/secret.pdf`)
-   
-   // ✅ 正确
-   throw new ExError('FILE_NOT_FOUND', '请求的文件不存在')
-   ```
-
-### 输入校验（强制）
-
-所有用户输入必须校验：
-
-- **类型校验**: 使用 Joi schema
-- **长度限制**: 防止 DoS 攻击
-- **格式校验**: 正则表达式验证（日期、邮箱、手机号等）
-- **范围校验**: 枚举值、数值范围
-
----
-
-## 文档联动规则
-
-### README.md 更新时机
-- ✅ 新增公开 API 接口
-- ✅ 修改接口参数或返回值
-- ✅ 修改默认配置值
-- ✅ 修改环境变量
-- ✅ 更新回归测试清单
-
-### CHANGELOG.md 更新时机（强制）
-- 🔴 **所有对外可见变更**都必须记录在 `[Unreleased]` 部分
-- 分类标签：
-  - `Added` - 新增功能
-  - `Changed` - 功能变更
-  - `Fixed` - Bug 修复
-  - `Deprecated` - 功能弃用
-  - `Removed` - 功能移除
-  - `Security` - 安全修复
-
-示例：
-```markdown
-## [Unreleased]
-
-### Fixed - 2025-11-03
-
-#### 修复 addDay 方法导致日期格式不一致问题
-
-**问题描述**: ...
-**根本原因**: ...
-**修复方案**: ...
-**相关文档**: bug-analysis/2025-11-03-xxx.md
-```
-
-### Bug 分析文档（强制）
-
-所有 Bug 修复必须创建 `bug-analysis/YYYY-MM-DD-问题描述.md`：
-
-**必填内容**:
-1. 问题描述（现象、复现步骤）
-2. 根本原因分析（Why - 为什么会出现）
-3. 修复方案（How - 如何修复，Why - 为什么选择这个方案）
-4. 验证方法（手动测试步骤或验证脚本）
-5. 影响对比（修复前后对比）
-
----
-
-## AI 助手执行检查清单
-
-### 阶段 1: 任务开始前
-```yaml
-[ ] 确认项目类型: Egg.js + TypeScript 微服务
-[ ] 确认不需要测试脚本（chat 项目例外）
-[ ] 确认测试方式: 手动测试 + API 文档
-[ ] 识别场景类型: 功能/Bug/重构/文档
-```
-
-### 阶段 2: 代码修改时
-```yaml
-[ ] 🔴 使用 TypeScript 路径别名
-[ ] 🔴 遵循 4 空格缩进
-[ ] 🔴 使用 responseHelper 统一响应
-[ ] 🔴 使用 Joi 进行参数校验
-[ ] 🔴 使用 ExError 处理错误并保留 cause
-[ ] 🔴 日志去敏（无密码/token/连接串）
-[ ] 🟠 注释使用中文 + 英文术语
-```
-
-### 阶段 3: 文档更新（替代测试）
-```yaml
-[ ] 🔴 更新 CHANGELOG.md [Unreleased]
-    - 分类: Added/Changed/Fixed/Deprecated/Removed
-    - 格式: - [类型] 简短描述
-[ ] 🟠 更新 README.md (如果 API 变更)
-    - API 参数/返回值
-    - 回归测试清单
-    - 配置项说明
-[ ] 🔴 创建 Bug 分析文档 (如果是 Bug 修复)
-    - bug-analysis/YYYY-MM-DD-问题描述.md
-    - 包含：问题/原因/方案/验证/对比
-[ ] 🟡 更新类型声明 (typings/)
-```
-
-### 阶段 4: 提交前验证
-```yaml
-[ ] 🔴 TypeScript 编译通过（npm run tsc）
-[ ] 🔴 ESLint 检查通过（npm run lint）
-[ ] 🔴 无敏感信息泄露（日志/注释/配置）
-[ ] 🔴 文档与代码一致（API 签名/参数/返回值）
-[ ] ❌ 不需要运行测试脚本（chat 项目例外）
-[ ] ❌ 不需要创建测试文件（chat 项目例外）
-```
-
----
-
-## 常见问题 (FAQ)
-
-### Q: 为什么 chat 项目不需要测试脚本？
-**A**: 
-1. **依赖复杂**: 需要 Nacos、MongoDB、Redis、WebSocket 等完整运行时环境
-2. **集成性强**: 大量外部 API 调用（OpenAI、Google Maps、Pexels 等）
-3. **Mock 成本高**: Mock 所有依赖的成本远超收益
-4. **测试替代方案**:
-   - ✅ TypeScript 类型检查
-   - ✅ ESLint 静态分析
-   - ✅ 详细的 API 文档和回归测试清单
-   - ✅ Bug 分析文档追踪问题
-
-### Q: 如何保障代码质量？
-**A**:
-1. **开发阶段**: TypeScript 类型检查 + ESLint
-2. **提交阶段**: 代码审查 + CHANGELOG 记录
-3. **上线前**: 手动回归测试（参考 README.md 测试清单）
-4. **上线后**: 日志监控 + Bug 分析文档
-
-### Q: 修复 Bug 后需要做什么？
-**A**:
-1. 🔴 修改代码并添加注释
-2. 🔴 创建 Bug 分析文档（bug-analysis/*.md）
-3. 🔴 更新 CHANGELOG.md [Unreleased]
-4. 🟠 更新 README.md（如果影响 API 或测试清单）
-5. 🟠 手动验证修复效果（参考分析文档的验证方法）
-
----
-
-## 参考文档
-
-- **通用规范**: `.github/guidelines.md`
-- **API 文档**: `chat/README.md`
-- **变更日志**: `chat/CHANGELOG.md`
-- **Bug 分析**: `chat/bug-analysis/*.md`
-- **Egg.js 官方文档**: https://www.eggjs.org/zh-CN
-- **ShareDB 文档**: https://share.github.io/sharedb/
-
----
-
-**版本**: v1.0.0  
-**创建日期**: 2025-11-03  
-**适用对象**: GitHub Copilot / Claude / 其他 AI 助手  
-**维护者**: Chat 服务开发团队
-
----
-## ❌ 禁止清单（chat 项目 - AI 必读）
-> **这是负面清单！违反任何一项即视为任务失败！**
-### 🔴 测试相关禁止项
-| 禁止项 | 说明 | 正确做法 |
-|--------|------|---------|
-| ❌ 在 `test/app/controller/` 创建测试文件 | 规范中未提及此目录 | ✅ 使用 `test/unit/features/` |
-| ❌ 使用 Node.js `assert` 断言库 | 必须使用 Chai | ✅ 使用 `const { expect } = require('chai')` |
-| ❌ 使用 Jest 测试框架 | 必须使用 Mocha | ✅ 使用 `const { describe, it } = require('mocha')` |
-| ❌ 使用 `@jest/globals` | Jest 相关都禁止 | ✅ 使用 Mocha + Chai |
-| ❌ 测试文件放在根目录 | 必须放在规范指定位置 | ✅ `test/unit/features/<功能名>.test.js` |
-### 🔴 架构相关禁止项
-| 禁止项 | 说明 | 正确做法 |
-|--------|------|---------|
-| ❌ 创建 Service 层 (`app/service/`) | Service 层大多是重复 CRUD | ✅ Controller 直接用 `ctx.utilsCrud` |
-| ❌ 创建 DTO 类 | 不需要 DTO 类定义 | ✅ 使用 Joi schema 验证 |
-| ❌ 创建 Repository 层 | 已有 utilsCrud | ✅ Controller 直接操作数据库 |
-| ❌ 在 Controller 写复杂业务逻辑 | Controller 应简洁 | ✅ 复杂逻辑放 `app/utils/` |
-### 🔴 参数验证禁止项
-| 禁止项 | 说明 | 正确做法 |
-|--------|------|---------|
-| ❌ 使用 `class-validator` | 必须使用 Joi | ✅ `ctx.Joi` + `ctx.validateJoi` |
-| ❌ 使用 `@nestjs/class-validator` | NestJS 装饰器不适用 Egg.js | ✅ 使用 Joi |
-| ❌ 使用 `ajv` | 必须使用 Joi | ✅ 使用 Joi |
-| ❌ 使用 `yup` | 必须使用 Joi | ✅ 使用 Joi |
-| ❌ 使用 `validator.js` | 必须使用 Joi | ✅ 使用 Joi |
-### 🔴 文件命名禁止项
-| 禁止项 | 说明 | 正确做法 |
-|--------|------|---------|
-| ❌ kebab-case (`user-preference.ts`) | 必须用 snake_case | ✅ `user_preference.ts` |
-| ❌ camelCase (`userPreference.ts`) | 必须用 snake_case | ✅ `user_preference.ts` |
-| ❌ PascalCase (`UserPreference.ts`) | 必须用 snake_case（除 Class） | ✅ `user_preference.ts` |
-### 🔴 注释语言禁止项
-| 禁止项 | 说明 | 正确做法 |
-|--------|------|---------|
-| ❌ Model 字段英文注释 | 必须中文 | ✅ `// 用户ID：关联 users 集合` |
-| ❌ 函数英文注释 | 必须中文 | ✅ `/** 获取用户偏好设置 */` |
-| ❌ 复杂逻辑英文注释 | 必须中文 | ✅ `// 静默时间段：22:00-08:00` |
-### 🔴 其他禁止项
-| 禁止项 | 说明 | 正确做法 |
-|--------|------|---------|
-| ❌ 不创建接口文档 | 必须同步创建 | ✅ `docs/api/<resource_name>.md` |
-| ❌ 直接修改 Service 层代码 | Service 层已废弃 | ✅ 迁移到 Controller + Utils |
-| ❌ 使用 TypeORM | 项目使用 Mongoose | ✅ 使用 `ctx.model.<ModelName>` |
-| ❌ 硬编码敏感信息 | 安全隐患 | ✅ 使用环境变量或 Nacos |
----
-## 🚨 AI 自检清单（每次任务必做）
-在创建任何文件前，必须回答以下问题：
-### 测试相关
-- [ ] Q: 测试文件路径是 `test/unit/features/` 吗？
-- [ ] Q: 使用的是 Mocha + Chai 吗？
-- [ ] Q: 没有使用 Node.js assert 吗？
-- [ ] Q: 没有使用 Jest 吗？
-- [ ] Q: 没有在 `test/app/controller/` 创建文件吗？
-### 架构相关
-- [ ] Q: 没有创建 Service 层吗？
-- [ ] Q: 没有创建 DTO 类吗？
-- [ ] Q: 没有创建 Repository 层吗？
-- [ ] Q: Controller 使用 `ctx.utilsCrud` 了吗？
-### 参数验证相关
-- [ ] Q: 使用的是 Joi 吗？
-- [ ] Q: 没有使用 class-validator 吗？
-### 文件命名相关
-- [ ] Q: 文件名是 snake_case 吗？
-- [ ] Q: 没有使用 kebab-case 或 camelCase 吗？
-### 注释语言相关
-- [ ] Q: Model 字段注释是中文吗？
-- [ ] Q: 函数注释是中文吗？
-### 文档相关
-- [ ] Q: 创建了接口文档 `docs/api/<resource_name>.md` 吗？
-**如果任何一项为 ❌ 或 不确定，立即停止，重新阅读规范！**
----
-## 📊 为什么需要这个禁止清单？
-### 问题分析
-1. **AI 的通用知识优先于项目规范**
-   - AI 知道 `test/app/controller/` 是常见测试目录
-   - 但 chat 项目规范**只提到** `test/unit/features/`
-   - 结果：AI 创建了错误的目录结构
-2. **AI 的多选一倾向**
-   - AI 知道 `assert` 和 `expect` 都可以用
-   - 但规范**明确要求** Chai 的 `expect`
-   - 结果：AI 随机选择了 `assert`
-3. **AI 的过度设计倾向**
-   - AI 倾向于创建 Service、DTO、Repository 等层次
-   - 但规范**明确禁止**这些层次
-   - 结果：AI 创建了不必要的抽象
-### 解决方案
-**负面清单 + 自检清单 = 100% 遵守规范**
-通过明确列出**禁止的做法**和**强制的自检流程**，确保 AI 在编码前进行验证。
----
-**规范版本**: v2.1  
-**最后更新**: 2025-11-11  
-**适用**: chat 项目所有 AI 辅助开发任务
